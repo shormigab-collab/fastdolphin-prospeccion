@@ -6,6 +6,7 @@ import {
   findApolloSignalForCompany,
   createApolloSignal,
   insertMessageDraft,
+  countApolloSignalsForTechnology,
 } from "@/lib/queries";
 import { generateOutreachDraft } from "@/lib/suggestions";
 import type { Technology } from "@/lib/types";
@@ -30,7 +31,17 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Selecciona una tecnología válida." }, { status: 400 });
   }
 
-  const { candidates, error } = await fetchApolloSignals(technology, 5);
+  // Cada sincronización avanza a la siguiente "página" de resultados de
+  // Apollo para esta tecnología (en vez de pedir siempre las mismas
+  // primeras empresas) — la página se calcula a partir de cuántas señales
+  // de Apollo ya existen para esta tecnología. Es una aproximación (algunas
+  // empresas de una página se pueden saltar por duplicado), pero evita que
+  // el equipo se quede viendo siempre el mismo puñado de empresas.
+  const PAGE_SIZE = 20;
+  const existingCount = await countApolloSignalsForTechnology(technology);
+  const page = Math.floor(existingCount / PAGE_SIZE) + 1;
+
+  const { candidates, error } = await fetchApolloSignals(technology, PAGE_SIZE, page);
 
   if (error) {
     // Mensaje real de Apollo.io (clave inválida, endpoint no incluido en el

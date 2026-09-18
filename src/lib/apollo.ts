@@ -55,7 +55,8 @@ export const ALL_TECHNOLOGIES: Technology[] = Object.keys(TECH_KEYWORDS) as Tech
 
 export async function fetchApolloSignals(
   technology: Technology,
-  perPage = 5
+  perPage = 20,
+  page = 1
 ): Promise<ApolloSyncResult> {
   if (!APOLLO_API_KEY) {
     return { candidates: [], error: "No hay APOLLO_API_KEY configurada." };
@@ -72,7 +73,7 @@ export async function fetchApolloSignals(
       },
       body: JSON.stringify({
         q_organization_keyword_tags: keywords,
-        page: 1,
+        page,
         per_page: perPage,
       }),
     });

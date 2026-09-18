@@ -38,6 +38,11 @@ export function ApolloSync() {
 
       if (!res.ok) {
         setError(body.error ?? "No se pudo sincronizar con Apollo.io.");
+      } else if (body.total === 0) {
+        setResult(
+          "Apollo no devolvió más empresas nuevas para esta tecnología por ahora — ya se recorrió lo que su plan expone. Vuelve a intentar más adelante."
+        );
+        router.refresh();
       } else {
         setResult(
           `Listo: ${body.created} señal(es) nueva(s), ${body.skipped} ya existían (de ${body.total} empresas encontradas).`
@@ -75,7 +80,8 @@ export function ApolloSync() {
       </div>
       <p className="mt-2 text-xs text-slate-500">
         Busca empresas en Apollo.io cuyo perfil coincide con esta tecnología y crea señales
-        nuevas (sin duplicar las que ya existen).
+        nuevas (sin duplicar las que ya existen). Cada vez que sincronizas avanza más
+        adentro de los resultados de Apollo, para traer empresas distintas a las anteriores.
       </p>
       {result && <p className="mt-2 text-sm text-emerald-700">{result}</p>}
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}

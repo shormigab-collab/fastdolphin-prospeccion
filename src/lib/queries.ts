@@ -113,6 +113,19 @@ export async function createManualSignal(params: {
   return rows[0].id;
 }
 
+// Cuántas señales de Apollo ya existen para esta tecnología — se usa para
+// calcular qué "página" de resultados de Apollo pedir en la próxima
+// sincronización, así cada sync avanza más profundo en sus resultados en
+// vez de pedir siempre las mismas primeras empresas.
+export async function countApolloSignalsForTechnology(technology: Technology) {
+  const rows = (await sql`
+    select count(*)::int as count from signals
+    where technology = ${technology} and source = 'apollo'
+  `) as unknown as { count: number }[];
+
+  return rows[0]?.count ?? 0;
+}
+
 // Evita crear la misma señal de Apollo.io dos veces si el equipo sincroniza
 // varias veces (una empresa + tecnología ya detectada antes no se repite).
 export async function findApolloSignalForCompany(companyId: string, technology: Technology) {

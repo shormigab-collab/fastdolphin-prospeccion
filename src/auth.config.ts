@@ -8,6 +8,10 @@ import type { NextAuthConfig } from "next-auth";
 // Credentials provider real, para usarse en rutas API, server components y
 // server actions (Node runtime).
 export const authConfig = {
+  // Necesario en Vercel/producción: le dice a NextAuth que confíe en el host
+  // que viene en la petición para armar la URL de la app. Sin esto, en
+  // algunos despliegues NextAuth no logra construir esa URL y truena con
+  // "Invalid URL" en cada petición (justo lo que estaba pasando).
   trustHost: true,
   pages: {
     signIn: "/login",

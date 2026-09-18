@@ -1,5 +1,6 @@
 import { listUsers } from "@/lib/queries";
 import { isApolloConnected } from "@/lib/apollo";
+import { ApolloSync } from "@/components/ApolloSync";
 
 export default async function SettingsPage() {
   const users = await listUsers();
@@ -31,10 +32,14 @@ export default async function SettingsPage() {
             {apolloConnected ? "Conectado" : "Pendiente"}
           </span>
         </div>
-        <p className="mt-3 text-xs text-slate-500">
-          Para conectarla, agrega <code className="rounded bg-slate-100 px-1">APOLLO_API_KEY</code>{" "}
-          en las variables de entorno de Vercel (ver README del proyecto).
-        </p>
+        {apolloConnected ? (
+          <ApolloSync />
+        ) : (
+          <p className="mt-3 text-xs text-slate-500">
+            Para conectarla, agrega <code className="rounded bg-slate-100 px-1">APOLLO_API_KEY</code>{" "}
+            en las variables de entorno de Vercel (ver README del proyecto).
+          </p>
+        )}
       </div>
 
       <div className="mt-8 rounded-lg border border-slate-200 bg-white p-5">

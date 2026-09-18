@@ -86,7 +86,10 @@ export const TECH_PITCH: Record<
 
 // Genera un borrador de mensaje de LinkedIn/email para una señal, listo para
 // que una persona del equipo lo revise, edite y apruebe (nunca se envía solo).
-export function generateOutreachDraft(signal: Signal, companyName: string) {
+export function generateOutreachDraft(
+  signal: Pick<Signal, "technology" | "signal_type">,
+  companyName: string
+) {
   const pitch = TECH_PITCH[signal.technology];
   const primerArgumento = pitch.argumentos[0];
 

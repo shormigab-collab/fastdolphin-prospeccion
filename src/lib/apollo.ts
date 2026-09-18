@@ -1,28 +1,34 @@
 // ---------------------------------------------------------------------------
-// Integración con Apollo.io — HOY este archivo solo genera datos de ejemplo
-// (para que la demo funcione sin necesidad de una API key). Cuando tengan
-// lista la key de Apollo.io, reemplacen el cuerpo de fetchApolloSignals()
-// por la llamada real y dejen todo lo demás (tipos, mapeo a `signals`) igual.
+// Integración con Apollo.io. Busca empresas cuyo perfil (industria,
+// tecnologías, palabras clave) coincide con cada área de servicio de Fast
+// Dolphin, y las devuelve como candidatas a señal de prospección.
 //
-// Documentación de la API de búsqueda de personas/empresas de Apollo:
-// https://docs.apollo.io/reference/people-search
+// Importante: la mayoría de planes de Apollo.io NO incluyen un endpoint de
+// "vacantes publicadas en tiempo real" (eso suele requerir su feature de
+// "Job Postings" / datos de intención, disponible en planes más altos).
+// Por eso esto usa el endpoint de búsqueda de empresas (organization search),
+// disponible en prácticamente todos los planes con acceso a la API, y arma
+// señales de tipo "tecnología detectada" — un punto de partida para que el
+// equipo investigue y luego complemente con carga manual desde LinkedIn si
+// confirman que están contratando.
 //
-// Nota importante: Apollo.io da datos de empresas, contactos y (en planes
-// superiores) señales de intención de compra — NO monitorea publicaciones de
-// LinkedIn en tiempo real. Por eso esta herramienta combina Apollo.io con la
-// carga manual (ver /leads/new) para lo que el equipo encuentra directamente
-// en LinkedIn.
+// Documentación: https://docs.apollo.io/reference/organization-search
 // ---------------------------------------------------------------------------
 
 import type { Technology } from "@/lib/types";
 
 export interface ApolloSignalCandidate {
   companyName: string;
-  companyDomain?: string;
-  industry?: string;
+  companyDomain?: string | null;
+  industry?: string | null;
   technology: Technology;
   title: string;
-  sourceUrl?: string;
+  sourceUrl?: string | null;
+}
+
+export interface ApolloSyncResult {
+  candidates: ApolloSignalCandidate[];
+  error?: string;
 }
 
 const APOLLO_API_KEY = process.env.APOLLO_API_KEY;
@@ -31,30 +37,80 @@ export function isApolloConnected() {
   return !!APOLLO_API_KEY;
 }
 
-// Reemplazar esta función cuando se conecte la API real de Apollo.io.
-// Debe devolver una lista de candidatos a señal que luego se insertan en la
-// tabla `signals` (ver src/app/api/apollo/sync/route.ts para el flujo
-// sugerido de sincronización).
-export async function fetchApolloSignals(): Promise<ApolloSignalCandidate[]> {
+// Palabras clave usadas para buscar empresas por cada tecnología que ofrece
+// Fast Dolphin. Se pueden ajustar sin tocar el resto del código.
+const TECH_KEYWORDS: Record<Technology, string[]> = {
+  SAP: ["sap", "s/4hana", "sap consultant"],
+  Oracle: ["oracle", "oracle erp", "oracle dba"],
+  Salesforce: ["salesforce", "salesforce developer"],
+  "Cloud/DevOps": ["devops", "aws", "cloud infrastructure"],
+  "Datos/IA": ["data engineering", "machine learning", "data science"],
+  Desarrollo: ["software development", "full stack"],
+  QA: ["qa automation", "software testing"],
+  Ciberseguridad: ["cybersecurity", "information security"],
+  "PM/Consultoría": ["it consulting", "project management"],
+};
+
+export const ALL_TECHNOLOGIES: Technology[] = Object.keys(TECH_KEYWORDS) as Technology[];
+
+export async function fetchApolloSignals(
+  technology: Technology,
+  perPage = 5
+): Promise<ApolloSyncResult> {
   if (!APOLLO_API_KEY) {
-    // Sin API key: no inventamos señales nuevas, la demo ya trae ejemplos
-    // sembrados por db/0002_seed_demo.sql.
-    return [];
+    return { candidates: [], error: "No hay APOLLO_API_KEY configurada." };
   }
 
-  // Ejemplo de cómo se vería la llamada real (ajustar payload según el plan
-  // de Apollo.io contratado):
-  //
-  // const res = await fetch("https://api.apollo.io/v1/mixed_companies/search", {
-  //   method: "POST",
-  //   headers: { "Content-Type": "application/json" },
-  //   body: JSON.stringify({
-  //     api_key: APOLLO_API_KEY,
-  //     q_organization_keyword_tags: ["SAP", "hiring"],
-  //   }),
-  // });
-  // const data = await res.json();
-  // return data.organizations.map(mapApolloOrgToSignal);
+  const keywords = TECH_KEYWORDS[technology];
 
-  return [];
+  try {
+    const res = await fetch("https://api.apollo.io/v1/mixed_companies/search", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Api-Key": APOLLO_API_KEY,
+      },
+      body: JSON.stringify({
+        q_organization_keyword_tags: keywords,
+        page: 1,
+        per_page: perPage,
+      }),
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      // Devolvemos el mensaje real que da Apollo (por ejemplo, si el plan no
+      // incluye este endpoint, o la key es inválida) para poder diagnosticar
+      // sin adivinar.
+      const message =
+        (data && (data.error || data.message)) ||
+        `Apollo respondió ${res.status} ${res.statusText}`;
+      return { candidates: [], error: String(message) };
+    }
+
+    const orgs: Array<Record<string, unknown>> =
+      (data?.organizations as Array<Record<string, unknown>>) ??
+      (data?.accounts as Array<Record<string, unknown>>) ??
+      [];
+
+    const candidates: ApolloSignalCandidate[] = orgs.map((org) => {
+      const name = (org.name as string) ?? "Empresa sin nombre";
+      return {
+        companyName: name,
+        companyDomain: (org.primary_domain as string) ?? (org.website_url as string) ?? null,
+        industry: (org.industry as string) ?? null,
+        technology,
+        title: `${name} coincide con el perfil de búsqueda de talento en ${technology} (Apollo.io)`,
+        sourceUrl: (org.linkedin_url as string) ?? (org.website_url as string) ?? null,
+      };
+    });
+
+    return { candidates };
+  } catch (err) {
+    return {
+      candidates: [],
+      error: err instanceof Error ? err.message : "Error desconocido llamando a Apollo.io",
+    };
+  }
 }

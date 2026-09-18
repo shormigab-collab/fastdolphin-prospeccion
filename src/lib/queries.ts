@@ -109,6 +109,40 @@ export async function createManualSignal(params: {
   return rows[0].id;
 }
 
+// Evita crear la misma señal de Apollo.io dos veces si el equipo sincroniza
+// varias veces (una empresa + tecnología ya detectada antes no se repite).
+export async function findApolloSignalForCompany(companyId: string, technology: Technology) {
+  const rows = (await sql`
+    select id from signals
+    where company_id = ${companyId} and technology = ${technology} and source = 'apollo'
+    limit 1
+  `) as unknown as { id: string }[];
+
+  return rows[0]?.id ?? null;
+}
+
+export async function createApolloSignal(params: {
+  companyId: string;
+  title: string;
+  technology: Technology;
+  sourceUrl?: string | null;
+  rawText?: string | null;
+}) {
+  const rows = (await sql`
+    insert into signals (
+      company_id, title, technology, signal_type, priority, source,
+      source_url, raw_text, status
+    )
+    values (
+      ${params.companyId}, ${params.title}, ${params.technology}, 'tecnologia_detectada',
+      'media', 'apollo', ${params.sourceUrl ?? null}, ${params.rawText ?? null}, 'nuevo'
+    )
+    returning id
+  `) as unknown as { id: string }[];
+
+  return rows[0].id;
+}
+
 export async function updateSignalStatus(signalId: string, status: SignalStatus) {
   await sql`update signals set status = ${status} where id = ${signalId}`;
 }

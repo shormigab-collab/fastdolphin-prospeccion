@@ -3,31 +3,8 @@ import { listSignals } from "@/lib/queries";
 import { StatusBadge, TechBadge, PriorityBadge, SourceBadge, WorkModeBadge } from "@/components/Badges";
 import { matchesLocationPolicy } from "@/lib/policy";
 import { IconSearch, IconCheck } from "@/components/icons";
+import { LeadsFilters } from "./LeadsFilters";
 import type { SignalStatus, SignalPriority, Technology } from "@/lib/types";
-
-const ALL_STATUSES: SignalStatus[] = [
-  "nuevo",
-  "calificando",
-  "contactado",
-  "en_conversacion",
-  "reunion_agendada",
-  "ganado",
-  "descartado",
-];
-
-const ALL_TECH: Technology[] = [
-  "SAP",
-  "Oracle",
-  "Salesforce",
-  "Cloud/DevOps",
-  "Datos/IA",
-  "Desarrollo",
-  "QA",
-  "Ciberseguridad",
-  "PM/Consultoría",
-];
-
-const ALL_PRIORITIES: SignalPriority[] = ["alta", "media", "baja"];
 
 type LeadsSearchParams = {
   status?: string;
@@ -153,56 +130,8 @@ export default async function LeadsPage({
         )}
       </form>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <FilterLink
-          label="Todos los estados"
-          href={buildHref(base, { status: undefined })}
-          active={!searchParams.status}
-        />
-        {ALL_STATUSES.map((status) => (
-          <FilterLink
-            key={status}
-            label={status.replace("_", " ")}
-            href={buildHref(base, { status })}
-            active={searchParams.status === status}
-          />
-        ))}
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        <FilterLink
-          label="Todas las tecnologías"
-          href={buildHref(base, { technology: undefined })}
-          active={!searchParams.technology}
-          variant="tech"
-        />
-        {ALL_TECH.map((tech) => (
-          <FilterLink
-            key={tech}
-            label={tech}
-            href={buildHref(base, { technology: tech })}
-            active={searchParams.technology === tech}
-            variant="tech"
-          />
-        ))}
-      </div>
-
-      <div className="mt-3 flex flex-wrap gap-2">
-        <FilterLink
-          label="Todas las prioridades"
-          href={buildHref(base, { priority: undefined })}
-          active={!searchParams.priority}
-          variant="priority"
-        />
-        {ALL_PRIORITIES.map((priority) => (
-          <FilterLink
-            key={priority}
-            label={`Prioridad ${priority}`}
-            href={buildHref(base, { priority })}
-            active={searchParams.priority === priority}
-            variant="priority"
-          />
-        ))}
+      <div className="mt-4">
+        <LeadsFilters current={base} />
       </div>
 
       <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card">
@@ -266,35 +195,5 @@ export default async function LeadsPage({
         </table>
       </div>
     </div>
-  );
-}
-
-function FilterLink({
-  label,
-  href,
-  active,
-  variant = "status",
-}: {
-  label: string;
-  href: string;
-  active: boolean;
-  variant?: "status" | "tech" | "priority";
-}) {
-  return (
-    <Link
-      href={href}
-      className={
-        "rounded-full border px-3 py-1 text-xs font-medium capitalize " +
-        (active
-          ? variant === "tech"
-            ? "border-dolphin-600 bg-dolphin-600 text-white"
-            : variant === "priority"
-              ? "border-ink/80 bg-ink/80 text-white"
-              : "border-ink bg-ink text-white"
-          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50")
-      }
-    >
-      {label}
-    </Link>
   );
 }

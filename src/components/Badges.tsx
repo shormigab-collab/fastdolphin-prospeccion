@@ -1,5 +1,5 @@
 import clsx from "clsx";
-import type { SignalPriority, SignalStatus, SignalSource } from "@/lib/types";
+import type { SignalPriority, SignalStatus, SignalSource, WorkMode } from "@/lib/types";
 
 const statusStyles: Record<SignalStatus, string> = {
   nuevo: "bg-blue-50 text-blue-700",
@@ -71,6 +71,38 @@ export function TechBadge({ technology }: { technology: string }) {
   return (
     <span className="inline-flex items-center rounded-full bg-dolphin-50 px-2.5 py-0.5 text-xs font-semibold text-dolphin-700">
       {technology}
+    </span>
+  );
+}
+
+const workModeLabels: Record<WorkMode, string> = {
+  remoto: "Remoto",
+  hibrido: "Híbrido",
+  presencial: "Presencial",
+};
+
+const workModeStyles: Record<WorkMode, string> = {
+  remoto: "bg-teal-50 text-teal-700",
+  hibrido: "bg-sky-50 text-sky-700",
+  presencial: "bg-orange-50 text-orange-700",
+};
+
+export function WorkModeBadge({
+  workMode,
+  location,
+}: {
+  workMode: WorkMode;
+  location?: string | null;
+}) {
+  return (
+    <span
+      className={clsx(
+        "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
+        workModeStyles[workMode]
+      )}
+    >
+      {workModeLabels[workMode]}
+      {location ? ` · ${location}` : ""}
     </span>
   );
 }

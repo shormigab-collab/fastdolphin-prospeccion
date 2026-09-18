@@ -7,6 +7,7 @@ import type {
   SignalPriority,
   SignalType,
   Technology,
+  WorkMode,
 } from "@/lib/types";
 
 export async function listSignals(filter?: {
@@ -89,6 +90,8 @@ export async function createManualSignal(params: {
   technology: Technology;
   signalType: SignalType;
   priority: SignalPriority;
+  workMode: WorkMode;
+  location?: string | null;
   sourceUrl?: string | null;
   rawText?: string | null;
   createdBy?: string | null;
@@ -96,12 +99,13 @@ export async function createManualSignal(params: {
   const rows = (await sql`
     insert into signals (
       company_id, title, technology, signal_type, priority, source,
-      source_url, raw_text, status, created_by
+      source_url, raw_text, status, created_by, work_mode, location
     )
     values (
       ${params.companyId}, ${params.title}, ${params.technology}, ${params.signalType},
       ${params.priority}, 'linkedin_import', ${params.sourceUrl ?? null},
-      ${params.rawText ?? null}, 'nuevo', ${params.createdBy ?? null}
+      ${params.rawText ?? null}, 'nuevo', ${params.createdBy ?? null},
+      ${params.workMode}, ${params.location ?? null}
     )
     returning id
   `) as unknown as { id: string }[];
@@ -127,20 +131,45 @@ export async function createApolloSignal(params: {
   technology: Technology;
   sourceUrl?: string | null;
   rawText?: string | null;
+  workMode?: WorkMode;
+  location?: string | null;
 }) {
   const rows = (await sql`
     insert into signals (
       company_id, title, technology, signal_type, priority, source,
-      source_url, raw_text, status
+      source_url, raw_text, status, work_mode, location
     )
     values (
       ${params.companyId}, ${params.title}, ${params.technology}, 'tecnologia_detectada',
-      'media', 'apollo', ${params.sourceUrl ?? null}, ${params.rawText ?? null}, 'nuevo'
+      'media', 'apollo', ${params.sourceUrl ?? null}, ${params.rawText ?? null}, 'nuevo',
+      ${params.workMode ?? "remoto"}, ${params.location ?? null}
     )
     returning id
   `) as unknown as { id: string }[];
 
   return rows[0].id;
+}
+
+export async function saveContactForSignal(
+  signalId: string,
+  contact: {
+    name: string;
+    title?: string | null;
+    email?: string | null;
+    phone?: string | null;
+    linkedinUrl?: string | null;
+  }
+) {
+  await sql`
+    update signals
+    set contact_name = ${contact.name},
+        contact_title = ${contact.title ?? null},
+        contact_email = ${contact.email ?? null},
+        contact_phone = ${contact.phone ?? null},
+        contact_linkedin_url = ${contact.linkedinUrl ?? null},
+        contact_looked_up_at = now()
+    where id = ${signalId}
+  `;
 }
 
 export async function updateSignalStatus(signalId: string, status: SignalStatus) {

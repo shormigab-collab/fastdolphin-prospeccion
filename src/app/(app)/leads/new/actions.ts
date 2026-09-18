@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { findOrCreateCompany, createManualSignal } from "@/lib/queries";
-import type { Technology, SignalType, SignalPriority } from "@/lib/types";
+import type { Technology, SignalType, SignalPriority, WorkMode } from "@/lib/types";
 
 export async function createManualSignalAction(formData: FormData) {
   const session = await auth();
@@ -15,6 +15,8 @@ export async function createManualSignalAction(formData: FormData) {
   const technology = String(formData.get("technology") ?? "") as Technology;
   const signalType = String(formData.get("signalType") ?? "vacante_publicada") as SignalType;
   const priority = String(formData.get("priority") ?? "media") as SignalPriority;
+  const workMode = String(formData.get("workMode") ?? "remoto") as WorkMode;
+  const location = String(formData.get("location") ?? "").trim();
   const sourceUrl = String(formData.get("sourceUrl") ?? "").trim();
   const rawText = String(formData.get("rawText") ?? "").trim();
 
@@ -34,6 +36,8 @@ export async function createManualSignalAction(formData: FormData) {
     technology,
     signalType,
     priority,
+    workMode,
+    location: location || null,
     sourceUrl: sourceUrl || null,
     rawText: rawText || null,
     createdBy: session?.user?.id ?? null,

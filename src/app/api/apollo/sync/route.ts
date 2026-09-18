@@ -59,6 +59,9 @@ export async function POST(request: Request) {
       title: candidate.title,
       technology: candidate.technology,
       sourceUrl: candidate.sourceUrl ?? null,
+      workMode: "remoto",
+      rawText:
+        "Modalidad y ubicación de la vacante sin confirmar por Apollo.io — verificar con la empresa antes de contactar.",
     });
 
     const draft = generateOutreachDraft(

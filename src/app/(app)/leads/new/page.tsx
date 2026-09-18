@@ -92,6 +92,34 @@ export default function NewLeadPage() {
           </div>
         </div>
 
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium text-slate-700">Modalidad</label>
+            <div className="mt-1 flex gap-3">
+              {[
+                { value: "remoto", label: "Remoto" },
+                { value: "hibrido", label: "Híbrido" },
+                { value: "presencial", label: "Presencial" },
+              ].map((m, i) => (
+                <label key={m.value} className="flex items-center gap-2 text-sm text-slate-600">
+                  <input type="radio" name="workMode" value={m.value} defaultChecked={i === 0} />
+                  {m.label}
+                </label>
+              ))}
+            </div>
+          </div>
+          <Field
+            label="Ubicación (si no es remoto)"
+            name="location"
+            placeholder="Ej: Ciudad de México, México"
+          />
+        </div>
+        <p className="-mt-2 text-xs text-slate-500">
+          Fast Dolphin solo prospecta vacantes remotas, o presenciales/híbridas en
+          México o Brasil — las demás quedan guardadas pero ocultas por defecto en
+          Señales / Leads.
+        </p>
+
         <Field
           label="Link de la publicación de LinkedIn (opcional)"
           name="sourceUrl"

@@ -22,6 +22,8 @@ export type SignalPriority = "alta" | "media" | "baja";
 
 export type SignalSource = "apollo" | "manual" | "linkedin_import";
 
+export type WorkMode = "remoto" | "hibrido" | "presencial";
+
 export type SignalType =
   | "vacante_publicada"
   | "contratacion_reciente"
@@ -51,6 +53,14 @@ export interface Signal {
   raw_text: string | null;
   status: SignalStatus;
   priority: SignalPriority;
+  work_mode: WorkMode;
+  location: string | null;
+  contact_name: string | null;
+  contact_title: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  contact_linkedin_url: string | null;
+  contact_looked_up_at: string | null;
   assigned_to: string | null;
   detected_at: string;
   created_by: string | null;

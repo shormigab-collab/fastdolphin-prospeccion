@@ -1,8 +1,10 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSignalById, messagesForSignal, notesForSignal } from "@/lib/queries";
-import { TechBadge, PriorityBadge, SourceBadge } from "@/components/Badges";
+import { TechBadge, PriorityBadge, SourceBadge, WorkModeBadge } from "@/components/Badges";
 import { suggestionsForSignal } from "@/lib/suggestions";
+import { isApolloConnected } from "@/lib/apollo";
+import { ContactLookup } from "@/components/ContactLookup";
 import { StatusForm } from "./StatusForm";
 import { MessagePanel } from "./MessagePanel";
 import { NotesForm } from "./NotesForm";
@@ -39,6 +41,7 @@ export default async function LeadDetailPage({
             <TechBadge technology={signal.technology} />
             <PriorityBadge priority={signal.priority} />
             <SourceBadge source={signal.source} />
+            <WorkModeBadge workMode={signal.work_mode} location={signal.location} />
           </div>
         </div>
         <StatusForm signalId={signal.id} status={signal.status} />
@@ -75,6 +78,18 @@ export default async function LeadDetailPage({
       </div>
 
       <div className="mt-8 space-y-6">
+        <ContactLookup
+          signalId={signal.id}
+          apolloConnected={isApolloConnected()}
+          initialContact={{
+            name: signal.contact_name,
+            title: signal.contact_title,
+            email: signal.contact_email,
+            phone: signal.contact_phone,
+            linkedinUrl: signal.contact_linkedin_url,
+            lookedUpAt: signal.contact_looked_up_at,
+          }}
+        />
         <MessagePanel signalId={signal.id} messages={messages} />
         <NotesForm signalId={signal.id} notes={notes} />
       </div>

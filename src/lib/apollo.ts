@@ -114,3 +114,141 @@ export async function fetchApolloSignals(
     };
   }
 }
+
+// ---------------------------------------------------------------------------
+// Búsqueda de contacto (RRHH / Talent Acquisition) por empresa, bajo demanda
+// desde el detalle de una señal — botón "Buscar contacto".
+//
+// Dos llamadas a Apollo:
+//   1. People Search: busca personas de esa empresa con cargos de RRHH /
+//      contratación (sin gastar crédito, solo trae nombre/cargo/LinkedIn).
+//   2. People Match (enrichment): revela el correo de esa persona (esto sí
+//      consume 1 crédito del plan). El teléfono casi nunca viene en la
+//      respuesta síncrona — Apollo lo entrega vía un webhook asíncrono en
+//      planes que lo soportan — así que si no viene, lo mostramos como "no
+//      disponible" en vez de tratarlo como error.
+//
+// Documentación: https://docs.apollo.io/reference/people-search
+//                https://docs.apollo.io/reference/people-enrichment
+// ---------------------------------------------------------------------------
+
+const CONTACT_TITLES = [
+  "talent acquisition",
+  "recruiter",
+  "recruiting",
+  "human resources",
+  "hr manager",
+  "hr business partner",
+  "people operations",
+];
+
+export interface ApolloContact {
+  name: string;
+  title: string | null;
+  email: string | null;
+  emailStatus: string | null;
+  phone: string | null;
+  linkedinUrl: string | null;
+}
+
+export interface ApolloContactResult {
+  contact?: ApolloContact | null;
+  error?: string;
+}
+
+export async function findCompanyContact(params: {
+  companyName: string;
+  companyDomain?: string | null;
+}): Promise<ApolloContactResult> {
+  if (!APOLLO_API_KEY) {
+    return { error: "No hay APOLLO_API_KEY configurada." };
+  }
+
+  try {
+    const searchRes = await fetch("https://api.apollo.io/v1/mixed_people/search", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Api-Key": APOLLO_API_KEY,
+      },
+      body: JSON.stringify({
+        ...(params.companyDomain
+          ? { q_organization_domains: params.companyDomain }
+          : { organization_name: params.companyName }),
+        person_titles: CONTACT_TITLES,
+        page: 1,
+        per_page: 1,
+      }),
+    });
+
+    const searchData = await searchRes.json().catch(() => null);
+
+    if (!searchRes.ok) {
+      const message =
+        (searchData && (searchData.error || searchData.message)) ||
+        `Apollo respondió ${searchRes.status} ${searchRes.statusText}`;
+      return { error: String(message) };
+    }
+
+    const people: Array<Record<string, unknown>> =
+      (searchData?.people as Array<Record<string, unknown>>) ?? [];
+    const person = people[0];
+
+    if (!person) {
+      return { contact: null };
+    }
+
+    const matchRes = await fetch("https://api.apollo.io/v1/people/match", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Api-Key": APOLLO_API_KEY,
+      },
+      body: JSON.stringify({
+        id: person.id,
+        reveal_personal_emails: false,
+      }),
+    });
+
+    const matchData = await matchRes.json().catch(() => null);
+
+    const baseContact: ApolloContact = {
+      name: (person.name as string) ?? "Contacto sin nombre",
+      title: (person.title as string) ?? null,
+      email: null,
+      emailStatus: null,
+      phone: null,
+      linkedinUrl: (person.linkedin_url as string) ?? null,
+    };
+
+    if (!matchRes.ok) {
+      const message =
+        (matchData && (matchData.error || matchData.message)) ||
+        `Apollo respondió ${matchRes.status} ${matchRes.statusText}`;
+      // Encontramos a la persona pero no se pudo revelar el correo — se
+      // devuelve lo que sí se encontró, junto con el error real de Apollo.
+      return { contact: baseContact, error: `No se pudo revelar el correo: ${message}` };
+    }
+
+    const matched = (matchData?.person as Record<string, unknown>) ?? {};
+
+    return {
+      contact: {
+        name: (matched.name as string) ?? baseContact.name,
+        title: (matched.title as string) ?? baseContact.title,
+        email: (matched.email as string) ?? null,
+        emailStatus: (matched.email_status as string) ?? null,
+        phone:
+          (matched.phone_number as string) ??
+          (matched.sanitized_phone as string) ??
+          (matched.mobile_phone as string) ??
+          null,
+        linkedinUrl: (matched.linkedin_url as string) ?? baseContact.linkedinUrl,
+      },
+    };
+  } catch (err) {
+    return {
+      error: err instanceof Error ? err.message : "Error desconocido llamando a Apollo.io",
+    };
+  }
+}

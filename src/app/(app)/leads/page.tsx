@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { listSignals } from "@/lib/queries";
-import { StatusBadge, TechBadge, PriorityBadge, SourceBadge } from "@/components/Badges";
+import { StatusBadge, TechBadge, PriorityBadge, SourceBadge, WorkModeBadge } from "@/components/Badges";
+import { matchesLocationPolicy } from "@/lib/policy";
 import type { SignalStatus, Technology } from "@/lib/types";
 
 const ALL_STATUSES: SignalStatus[] = [
@@ -28,12 +29,22 @@ const ALL_TECH: Technology[] = [
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: { status?: string; technology?: string };
+  searchParams: { status?: string; technology?: string; all?: string };
 }) {
-  const signals = await listSignals({
+  const allSignals = await listSignals({
     status: searchParams.status as SignalStatus | undefined,
     technology: searchParams.technology as Technology | undefined,
   });
+
+  const showAll = searchParams.all === "1";
+  const signals = showAll
+    ? allSignals
+    : allSignals.filter((s) => matchesLocationPolicy(s.work_mode, s.location));
+  const hiddenCount = allSignals.length - signals.length;
+
+  const otherParams = new URLSearchParams();
+  if (searchParams.status) otherParams.set("status", searchParams.status);
+  if (searchParams.technology) otherParams.set("technology", searchParams.technology);
 
   return (
     <div className="mx-auto max-w-6xl px-8 py-10">
@@ -42,6 +53,25 @@ export default async function LeadsPage({
           <h1 className="text-2xl font-bold text-slate-900">Señales / Leads</h1>
           <p className="mt-1 text-sm text-slate-500">
             {signals.length} señales encontradas
+            {!showAll && hiddenCount > 0 && (
+              <>
+                {" · "}
+                <Link
+                  href={`/leads?${new URLSearchParams({ ...Object.fromEntries(otherParams), all: "1" })}`}
+                  className="text-dolphin-600 hover:underline"
+                >
+                  {hiddenCount} oculta(s) fuera de política (ver todas)
+                </Link>
+              </>
+            )}
+            {showAll && (
+              <>
+                {" · "}
+                <Link href={`/leads?${otherParams}`} className="text-dolphin-600 hover:underline">
+                  ocultar las que están fuera de política
+                </Link>
+              </>
+            )}
           </p>
         </div>
         <Link
@@ -51,6 +81,11 @@ export default async function LeadsPage({
           + Cargar de LinkedIn
         </Link>
       </div>
+
+      <p className="mt-2 text-xs text-slate-500">
+        Por defecto solo se muestran señales remotas, o presenciales/híbridas en
+        México o Brasil — la política de prospección de Fast Dolphin.
+      </p>
 
       <div className="mt-6 flex flex-wrap gap-2">
         <FilterLink
@@ -94,6 +129,7 @@ export default async function LeadsPage({
               <th className="px-4 py-3">Empresa</th>
               <th className="px-4 py-3">Tecnología</th>
               <th className="px-4 py-3">Fuente</th>
+              <th className="px-4 py-3">Modalidad</th>
               <th className="px-4 py-3">Prioridad</th>
               <th className="px-4 py-3">Estado</th>
             </tr>
@@ -114,6 +150,9 @@ export default async function LeadsPage({
                   <SourceBadge source={s.source} />
                 </td>
                 <td className="px-4 py-3">
+                  <WorkModeBadge workMode={s.work_mode} location={s.location} />
+                </td>
+                <td className="px-4 py-3">
                   <PriorityBadge priority={s.priority} />
                 </td>
                 <td className="px-4 py-3">
@@ -123,7 +162,7 @@ export default async function LeadsPage({
             ))}
             {signals.length === 0 && (
               <tr>
-                <td colSpan={6} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
                   No hay señales con estos filtros.
                 </td>
               </tr>

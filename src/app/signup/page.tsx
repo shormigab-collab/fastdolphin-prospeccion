@@ -5,7 +5,9 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { AuthCard } from "@/components/AuthCard";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
 
+const GOOGLE_LOGIN_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED === "true";
 const ALLOWED_DOMAINS = (
   process.env.NEXT_PUBLIC_ALLOWED_EMAIL_DOMAINS ?? "fastdolphin.com"
 )
@@ -71,6 +73,16 @@ export default function SignupPage() {
       title="Crea tu cuenta"
       subtitle={`Solo disponible para correos de ${ALLOWED_DOMAINS.join(", ")}.`}
     >
+      {GOOGLE_LOGIN_ENABLED && (
+        <>
+          <GoogleSignInButton label="Crear cuenta con Google" />
+          <div className="my-4 flex items-center gap-3 text-xs text-slate-400">
+            <div className="h-px flex-1 bg-slate-200" />
+            o con tu correo
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+        </>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="text-sm font-medium text-slate-700">Nombre completo</label>

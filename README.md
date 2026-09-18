@@ -128,6 +128,74 @@ protege quién puede entrar.
 4. Deploy (o **Redeploy** si el proyecto ya se había desplegado antes de
    agregar las variables).
 
+## Iniciar sesión con Google (opcional)
+
+Además del login por correo y contraseña, la app puede mostrar un botón
+"Continuar con Google" que solo deja entrar con una cuenta de Google del
+dominio permitido (por defecto, `@fastdolphin.com`). Está apagado por
+defecto — mientras no se configure nada de esto, nadie ve el botón y el
+login por correo/contraseña sigue funcionando exactamente igual.
+
+Para activarlo:
+
+1. En el **SQL Editor** de Neon, corre `db/0006_google_auth.sql` (quita la
+   restricción de que toda cuenta tenga contraseña propia, porque una
+   cuenta creada por Google no la tiene).
+2. Alguien con acceso al **Google Cloud Console** del Workspace de Fast
+   Dolphin (normalmente no es la persona que despliega la app, sino alguien
+   de sistemas/administración) debe crear unas credenciales OAuth:
+   - En [Google Cloud Console](https://console.cloud.google.com/) → **APIs
+     & Services** → **Credentials** → **Create Credentials** → **OAuth
+     client ID** → tipo **Web application**.
+   - En **Authorized redirect URIs** agrega:
+     `https://<tu-dominio-de-vercel>/api/auth/callback/google`
+   - Copia el **Client ID** y el **Client Secret** que genera.
+3. En Vercel, **Settings → Environment Variables**, agrega:
+   - `GOOGLE_CLIENT_ID`
+   - `GOOGLE_CLIENT_SECRET`
+   - `NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED` → `true`
+4. Redeploy. El botón de Google aparece en `/login` y `/signup`, y solo deja
+   entrar (o crear cuenta) con un correo de Google de los dominios
+   permitidos — si alguien intenta con otro dominio, la app lo rechaza y le
+   muestra el mismo aviso que usa el registro por correo.
+
+Una cuenta creada por Google usa el mismo `id` interno que el resto de la
+app (notas, mensajes aprobados, etc.), así que si alguien ya tenía cuenta
+por correo/contraseña y luego entra por primera vez con Google usando el
+mismo correo, la app la reconoce como la misma persona.
+
+## Vacantes confirmadas y correos de prioridad alta (opcional)
+
+Como el plan de Apollo.io que usamos no confirma vacantes activas en tiempo
+real (solo perfiles de empresa que coinciden con una tecnología), se agregó
+un botón **"Confirmar vacante"** en el detalle de cada señal: alguien del
+equipo lo usa cuando verificó a mano (en LinkedIn, la página de la empresa,
+etc.) que la vacante existe de verdad. Al confirmarla, la señal sube a
+prioridad alta, queda registrado en las notas (sale en "Actividad
+reciente"), y — si el correo está configurado — se le avisa a todo el
+equipo por email. Lo mismo pasa si alguien carga manualmente una señal ya
+con prioridad alta desde `/leads/new`.
+
+Para activar los correos:
+
+1. En el **SQL Editor** de Neon, corre `db/0007_vacancy_confirmation.sql`.
+2. Crea una cuenta gratis en [resend.com](https://resend.com) (100
+   correos/día gratis, sin tarjeta) y saca una API key.
+3. En Vercel, **Settings → Environment Variables**, agrega `RESEND_API_KEY`
+   con esa key. Con eso ya basta — por defecto los correos salen del
+   dominio de pruebas de Resend, así que no hace falta nada más.
+4. (Opcional) Si además quieren que los correos salgan como
+   `@fastdolphin.com` en vez del dominio de pruebas de Resend, hay que
+   verificar el dominio en Resend, lo cual pide acceso al DNS de
+   fastdolphin.com — normalmente esto lo hace alguien de sistemas, no un
+   empleado normal. Una vez verificado, agrega `EMAIL_FROM` con algo como
+   `Fast Dolphin Prospección <notificaciones@fastdolphin.com>`.
+5. Redeploy. Mientras no exista `RESEND_API_KEY`, la plataforma no manda
+   ningún correo — todo lo demás sigue funcionando igual.
+
+Los correos se envían a todas las personas que tengan cuenta creada en la
+plataforma (`listUsers()` en `src/lib/queries.ts`).
+
 ## Pasar de demo a datos reales
 
 - **Apollo.io**: agrega `APOLLO_API_KEY` en las variables de entorno.

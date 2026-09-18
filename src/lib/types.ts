@@ -63,6 +63,8 @@ export interface Signal {
   contact_apollo_id: string | null;
   contact_email_status: string | null;
   contact_looked_up_at: string | null;
+  vacancy_confirmed_at: string | null;
+  vacancy_confirmed_by: string | null;
   assigned_to: string | null;
   detected_at: string;
   created_by: string | null;

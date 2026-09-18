@@ -9,6 +9,7 @@ import { IconLink } from "@/components/icons";
 import { StatusForm } from "./StatusForm";
 import { MessagePanel } from "./MessagePanel";
 import { NotesForm } from "./NotesForm";
+import { ConfirmVacancyButton } from "./ConfirmVacancyButton";
 
 export default async function LeadDetailPage({
   params,
@@ -51,7 +52,10 @@ export default async function LeadDetailPage({
             <TechBadge technology={signal.technology} />
           </div>
         </div>
-        <StatusForm signalId={signal.id} status={signal.status} />
+        <div className="flex flex-col items-end gap-2">
+          <StatusForm signalId={signal.id} status={signal.status} />
+          <ConfirmVacancyButton signalId={signal.id} confirmedAt={signal.vacancy_confirmed_at} />
+        </div>
       </div>
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-5">

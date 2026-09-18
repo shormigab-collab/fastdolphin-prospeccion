@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
 import { findOrCreateCompany, createManualSignal } from "@/lib/queries";
+import { notifyTeamOfHighPrioritySignal } from "@/lib/email";
 import type { Technology, SignalType, SignalPriority, WorkMode } from "@/lib/types";
 
 export async function createManualSignalAction(formData: FormData) {
@@ -42,6 +43,16 @@ export async function createManualSignalAction(formData: FormData) {
     rawText: rawText || null,
     createdBy: session?.user?.id ?? null,
   });
+
+  if (priority === "alta") {
+    await notifyTeamOfHighPrioritySignal({
+      signalId,
+      companyName,
+      technology,
+      title,
+      reason: "cargada",
+    });
+  }
 
   revalidatePath("/leads");
   revalidatePath("/dashboard");

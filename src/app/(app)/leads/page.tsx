@@ -2,7 +2,8 @@ import Link from "next/link";
 import { listSignals } from "@/lib/queries";
 import { StatusBadge, TechBadge, PriorityBadge, SourceBadge, WorkModeBadge } from "@/components/Badges";
 import { matchesLocationPolicy } from "@/lib/policy";
-import type { SignalStatus, Technology } from "@/lib/types";
+import { IconSearch, IconCheck } from "@/components/icons";
+import type { SignalStatus, SignalPriority, Technology } from "@/lib/types";
 
 const ALL_STATUSES: SignalStatus[] = [
   "nuevo",
@@ -26,14 +27,41 @@ const ALL_TECH: Technology[] = [
   "PM/Consultoría",
 ];
 
+const ALL_PRIORITIES: SignalPriority[] = ["alta", "media", "baja"];
+
+type LeadsSearchParams = {
+  status?: string;
+  technology?: string;
+  priority?: string;
+  q?: string;
+  all?: string;
+};
+
+// Arma un href de /leads a partir de los filtros actuales, reemplazando
+// (o quitando, si el valor es undefined) uno o varios de ellos — así cada
+// filtro se puede combinar con los demás sin perderlos al hacer clic.
+function buildHref(base: LeadsSearchParams, overrides: LeadsSearchParams) {
+  const merged = { ...base, ...overrides };
+  const usp = new URLSearchParams();
+  if (merged.status) usp.set("status", merged.status);
+  if (merged.technology) usp.set("technology", merged.technology);
+  if (merged.priority) usp.set("priority", merged.priority);
+  if (merged.q) usp.set("q", merged.q);
+  if (merged.all) usp.set("all", merged.all);
+  const s = usp.toString();
+  return s ? `/leads?${s}` : "/leads";
+}
+
 export default async function LeadsPage({
   searchParams,
 }: {
-  searchParams: { status?: string; technology?: string; all?: string };
+  searchParams: LeadsSearchParams;
 }) {
   const allSignals = await listSignals({
     status: searchParams.status as SignalStatus | undefined,
     technology: searchParams.technology as Technology | undefined,
+    priority: searchParams.priority as SignalPriority | undefined,
+    q: searchParams.q,
   });
 
   const showAll = searchParams.all === "1";
@@ -42,9 +70,13 @@ export default async function LeadsPage({
     : allSignals.filter((s) => matchesLocationPolicy(s.work_mode, s.location));
   const hiddenCount = allSignals.length - signals.length;
 
-  const otherParams = new URLSearchParams();
-  if (searchParams.status) otherParams.set("status", searchParams.status);
-  if (searchParams.technology) otherParams.set("technology", searchParams.technology);
+  const base: LeadsSearchParams = {
+    status: searchParams.status,
+    technology: searchParams.technology,
+    priority: searchParams.priority,
+    q: searchParams.q,
+    all: searchParams.all,
+  };
 
   return (
     <div className="mx-auto max-w-6xl px-8 py-10">
@@ -58,7 +90,7 @@ export default async function LeadsPage({
               <>
                 {" · "}
                 <Link
-                  href={`/leads?${new URLSearchParams({ ...Object.fromEntries(otherParams), all: "1" })}`}
+                  href={buildHref(base, { all: "1" })}
                   className="text-dolphin-600 hover:underline"
                 >
                   {hiddenCount} oculta(s) fuera de política (ver todas)
@@ -68,7 +100,7 @@ export default async function LeadsPage({
             {showAll && (
               <>
                 {" · "}
-                <Link href={`/leads?${otherParams}`} className="text-dolphin-600 hover:underline">
+                <Link href={buildHref(base, { all: undefined })} className="text-dolphin-600 hover:underline">
                   ocultar las que están fuera de política
                 </Link>
               </>
@@ -88,17 +120,50 @@ export default async function LeadsPage({
         México o Brasil — la política de prospección de Fast Dolphin.
       </p>
 
-      <div className="mt-6 flex flex-wrap gap-2">
+      <form action="/leads" method="GET" className="mt-6 flex flex-wrap items-center gap-2">
+        {searchParams.status && <input type="hidden" name="status" value={searchParams.status} />}
+        {searchParams.technology && (
+          <input type="hidden" name="technology" value={searchParams.technology} />
+        )}
+        {searchParams.priority && <input type="hidden" name="priority" value={searchParams.priority} />}
+        {searchParams.all && <input type="hidden" name="all" value={searchParams.all} />}
+        <div className="relative flex-1 min-w-[220px] max-w-sm">
+          <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+          <input
+            type="text"
+            name="q"
+            defaultValue={searchParams.q ?? ""}
+            placeholder="Buscar por señal o empresa..."
+            className="w-full rounded-xl border border-slate-300 bg-white py-2 pl-9 pr-3 text-sm focus:border-dolphin-500 focus:outline-none focus:ring-1 focus:ring-dolphin-500"
+          />
+        </div>
+        <button
+          type="submit"
+          className="rounded-xl bg-ink px-4 py-2 text-sm font-semibold text-white hover:bg-ink/90"
+        >
+          Buscar
+        </button>
+        {searchParams.q && (
+          <Link
+            href={buildHref(base, { q: undefined })}
+            className="text-xs font-medium text-slate-500 hover:text-dolphin-600 hover:underline"
+          >
+            Quitar búsqueda
+          </Link>
+        )}
+      </form>
+
+      <div className="mt-4 flex flex-wrap gap-2">
         <FilterLink
           label="Todos los estados"
-          href="/leads"
+          href={buildHref(base, { status: undefined })}
           active={!searchParams.status}
         />
         {ALL_STATUSES.map((status) => (
           <FilterLink
             key={status}
             label={status.replace("_", " ")}
-            href={`/leads?status=${status}${searchParams.technology ? `&technology=${searchParams.technology}` : ""}`}
+            href={buildHref(base, { status })}
             active={searchParams.status === status}
           />
         ))}
@@ -107,7 +172,7 @@ export default async function LeadsPage({
       <div className="mt-3 flex flex-wrap gap-2">
         <FilterLink
           label="Todas las tecnologías"
-          href={searchParams.status ? `/leads?status=${searchParams.status}` : "/leads"}
+          href={buildHref(base, { technology: undefined })}
           active={!searchParams.technology}
           variant="tech"
         />
@@ -115,9 +180,27 @@ export default async function LeadsPage({
           <FilterLink
             key={tech}
             label={tech}
-            href={`/leads?technology=${tech}${searchParams.status ? `&status=${searchParams.status}` : ""}`}
+            href={buildHref(base, { technology: tech })}
             active={searchParams.technology === tech}
             variant="tech"
+          />
+        ))}
+      </div>
+
+      <div className="mt-3 flex flex-wrap gap-2">
+        <FilterLink
+          label="Todas las prioridades"
+          href={buildHref(base, { priority: undefined })}
+          active={!searchParams.priority}
+          variant="priority"
+        />
+        {ALL_PRIORITIES.map((priority) => (
+          <FilterLink
+            key={priority}
+            label={`Prioridad ${priority}`}
+            href={buildHref(base, { priority })}
+            active={searchParams.priority === priority}
+            variant="priority"
           />
         ))}
       </div>
@@ -158,7 +241,14 @@ export default async function LeadsPage({
                   <WorkModeBadge workMode={s.work_mode} location={s.location} />
                 </td>
                 <td className="px-4 py-3">
-                  <PriorityBadge priority={s.priority} />
+                  <div className="flex items-center gap-1.5">
+                    <PriorityBadge priority={s.priority} />
+                    {s.vacancy_confirmed_at && (
+                      <span title="Vacante confirmada" className="text-emerald-600">
+                        <IconCheck className="h-3.5 w-3.5" />
+                      </span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-4 py-3">
                   <StatusBadge status={s.status} />
@@ -188,7 +278,7 @@ function FilterLink({
   label: string;
   href: string;
   active: boolean;
-  variant?: "status" | "tech";
+  variant?: "status" | "tech" | "priority";
 }) {
   return (
     <Link
@@ -198,7 +288,9 @@ function FilterLink({
         (active
           ? variant === "tech"
             ? "border-dolphin-600 bg-dolphin-600 text-white"
-            : "border-ink bg-ink text-white"
+            : variant === "priority"
+              ? "border-ink/80 bg-ink/80 text-white"
+              : "border-ink bg-ink text-white"
           : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50")
       }
     >

@@ -12,7 +12,9 @@ import {
   discardMessage as discardMessageQuery,
   updateSignalStatus,
   addNote as addNoteQuery,
+  confirmVacancy,
 } from "@/lib/queries";
+import { notifyTeamOfHighPrioritySignal } from "@/lib/email";
 import type { SignalStatus } from "@/lib/types";
 
 export async function generateDraftAction(
@@ -66,4 +68,34 @@ export async function addNoteAction(signalId: string, body: string) {
   const session = await auth();
   await addNoteQuery({ signalId, authorId: session?.user?.id ?? null, body });
   revalidatePath(`/leads/${signalId}`);
+}
+
+// "Confirmar vacante" — alguien del equipo verificó a mano que la vacante
+// existe de verdad (Apollo, en el plan que tenemos, no puede confirmar
+// esto). Sube la señal a prioridad alta, deja constancia en las notas (para
+// que salga en "Actividad reciente"), y avisa por correo a todo el equipo
+// si el envío de correos está configurado.
+export async function confirmVacancyAction(signalId: string) {
+  const session = await auth();
+  await confirmVacancy(signalId, session?.user?.id ?? null);
+  await addNoteQuery({
+    signalId,
+    authorId: session?.user?.id ?? null,
+    body: "Vacante confirmada manualmente — prioridad subida a alta.",
+  });
+
+  const signal = await getSignalById(signalId);
+  if (signal) {
+    await notifyTeamOfHighPrioritySignal({
+      signalId: signal.id,
+      companyName: signal.company?.name ?? "Empresa",
+      technology: signal.technology,
+      title: signal.title,
+      reason: "confirmada",
+    });
+  }
+
+  revalidatePath(`/leads/${signalId}`);
+  revalidatePath("/leads");
+  revalidatePath("/dashboard");
 }

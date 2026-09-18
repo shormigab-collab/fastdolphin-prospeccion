@@ -13,7 +13,13 @@ import type {
 export async function listSignals(filter?: {
   status?: SignalStatus;
   technology?: Technology;
+  priority?: SignalPriority;
+  // Busca por coincidencia parcial en el título de la señal o el nombre de
+  // la empresa (case-insensitive) — filtro de texto libre para el buscador.
+  q?: string;
 }) {
+  const searchTerm = filter?.q?.trim() ? `%${filter.q.trim()}%` : null;
+
   const rows = (await sql`
     select
       s.*,
@@ -26,6 +32,12 @@ export async function listSignals(filter?: {
     join companies c on c.id = s.company_id
     where (${filter?.status ?? null}::text is null or s.status = ${filter?.status ?? null})
       and (${filter?.technology ?? null}::text is null or s.technology = ${filter?.technology ?? null})
+      and (${filter?.priority ?? null}::text is null or s.priority = ${filter?.priority ?? null})
+      and (
+        ${searchTerm}::text is null
+        or s.title ilike ${searchTerm}
+        or c.name ilike ${searchTerm}
+      )
     order by
       case s.priority when 'alta' then 0 when 'media' then 1 else 2 end,
       s.detected_at desc
@@ -296,6 +308,18 @@ export async function listRecentActivity(limit = 6) {
   `) as unknown as RecentActivityItem[];
 
   return rows;
+}
+
+// Marca una señal como "vacante confirmada" a mano — alguien del equipo
+// verificó que la vacante existe de verdad, así que sube la prioridad a
+// alta (no lo hace ningún proceso automático, porque el plan de Apollo.io
+// que usamos no confirma vacantes activas, solo perfiles que coinciden).
+export async function confirmVacancy(signalId: string, userId: string | null) {
+  await sql`
+    update signals
+    set priority = 'alta', vacancy_confirmed_at = now(), vacancy_confirmed_by = ${userId}
+    where id = ${signalId}
+  `;
 }
 
 export async function listUsers() {

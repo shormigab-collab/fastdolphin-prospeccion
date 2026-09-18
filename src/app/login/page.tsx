@@ -1,16 +1,29 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { AuthCard } from "@/components/AuthCard";
+import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+
+const GOOGLE_LOGIN_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED === "true";
+const ALLOWED_DOMAINS = (
+  process.env.NEXT_PUBLIC_ALLOWED_EMAIL_DOMAINS ?? "fastdolphin.com"
+)
+  .split(",")
+  .map((d) => d.trim());
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(
+    searchParams.get("error") === "AccessDenied"
+      ? `Solo se puede entrar con un correo de ${ALLOWED_DOMAINS.join(", ")}.`
+      : null
+  );
   const [loading, setLoading] = useState(false);
 
   async function handleSubmit(e: React.FormEvent) {
@@ -40,6 +53,16 @@ export default function LoginPage() {
       title="Inicia sesión"
       subtitle="Usa tu cuenta del equipo de Fast Dolphin."
     >
+      {GOOGLE_LOGIN_ENABLED && (
+        <>
+          <GoogleSignInButton />
+          <div className="my-4 flex items-center gap-3 text-xs text-slate-400">
+            <div className="h-px flex-1 bg-slate-200" />
+            o con tu correo
+            <div className="h-px flex-1 bg-slate-200" />
+          </div>
+        </>
+      )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label className="text-sm font-medium text-slate-700">Correo</label>

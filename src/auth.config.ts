@@ -8,6 +8,7 @@ import type { NextAuthConfig } from "next-auth";
 // Credentials provider real, para usarse en rutas API, server components y
 // server actions (Node runtime).
 export const authConfig = {
+  trustHost: true,
   pages: {
     signIn: "/login",
   },

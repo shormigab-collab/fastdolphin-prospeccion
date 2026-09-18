@@ -17,8 +17,8 @@ export default async function AppLayout({
 
   return (
     <div className="flex min-h-screen">
-      <Sidebar email={session.user.email ?? ""} />
-      <div className="flex-1 overflow-y-auto bg-slate-50">{children}</div>
+      <Sidebar email={session.user.email ?? ""} fullName={session.user.name} />
+      <div className="flex-1 overflow-y-auto bg-canvas">{children}</div>
     </div>
   );
 }

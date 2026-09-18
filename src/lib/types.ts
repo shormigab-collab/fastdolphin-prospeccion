@@ -60,6 +60,8 @@ export interface Signal {
   contact_email: string | null;
   contact_phone: string | null;
   contact_linkedin_url: string | null;
+  contact_apollo_id: string | null;
+  contact_email_status: string | null;
   contact_looked_up_at: string | null;
   assigned_to: string | null;
   detected_at: string;
@@ -73,6 +75,7 @@ export interface MessageDraft {
   id: string;
   signal_id: string;
   channel: "linkedin" | "email";
+  subject: string | null;
   draft_text: string;
   status: "pendiente_aprobacion" | "aprobado" | "enviado" | "descartado";
   suggested_by: "system" | "user";

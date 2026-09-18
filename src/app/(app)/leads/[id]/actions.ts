@@ -2,10 +2,11 @@
 
 import { revalidatePath } from "next/cache";
 import { auth } from "@/auth";
-import { generateOutreachDraft } from "@/lib/suggestions";
+import { generateOutreachDraft, generateEmailSubject } from "@/lib/suggestions";
 import {
   getSignalById,
   insertMessageDraft,
+  updateMessageDraft,
   approveMessage as approveMessageQuery,
   markMessageSent,
   discardMessage as discardMessageQuery,
@@ -14,13 +15,26 @@ import {
 } from "@/lib/queries";
 import type { SignalStatus } from "@/lib/types";
 
-export async function generateDraftAction(signalId: string) {
+export async function generateDraftAction(
+  signalId: string,
+  channel: "linkedin" | "email" = "linkedin"
+) {
   const signal = await getSignalById(signalId);
   if (!signal) return;
 
   const draft = generateOutreachDraft(signal, signal.company?.name ?? "la empresa");
-  await insertMessageDraft({ signalId, draftText: draft });
+  const subject = channel === "email" ? generateEmailSubject(signal.technology) : null;
+  await insertMessageDraft({ signalId, draftText: draft, channel, subject });
 
+  revalidatePath(`/leads/${signalId}`);
+}
+
+export async function updateDraftAction(
+  messageId: string,
+  signalId: string,
+  params: { draftText: string; subject?: string | null }
+) {
+  await updateMessageDraft(messageId, params);
   revalidatePath(`/leads/${signalId}`);
 }
 

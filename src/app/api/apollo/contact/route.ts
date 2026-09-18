@@ -47,8 +47,10 @@ export async function POST(request: Request) {
     name: contact.name,
     title: contact.title,
     email: contact.email,
+    emailStatus: contact.emailStatus,
     phone: contact.phone,
     linkedinUrl: contact.linkedinUrl,
+    apolloId: contact.apolloId,
   });
 
   // Error suave: se encontró a la persona pero falló la revelación de correo

@@ -24,11 +24,12 @@ const SIGNAL_TYPES = [
 export default function NewLeadPage() {
   return (
     <div className="mx-auto max-w-2xl px-8 py-10">
-      <Link href="/leads" className="text-sm text-dolphin-600 hover:underline">
+      <p className="text-xs font-medium text-slate-400">Prospección / Cargar de LinkedIn</p>
+      <Link href="/leads" className="mt-1 inline-block text-sm text-dolphin-600 hover:underline">
         ← Volver a señales
       </Link>
 
-      <h1 className="mt-3 text-2xl font-bold text-slate-900">
+      <h1 className="mt-3 text-2xl font-bold text-ink">
         Cargar señal encontrada en LinkedIn
       </h1>
       <p className="mt-1 text-sm text-slate-500">
@@ -37,7 +38,10 @@ export default function NewLeadPage() {
         herramienta la suma al mismo lugar que las señales de Apollo.io.
       </p>
 
-      <form action={createManualSignalAction} className="mt-8 space-y-5">
+      <form
+        action={createManualSignalAction}
+        className="mt-8 space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-card"
+      >
         <div className="grid grid-cols-2 gap-4">
           <Field label="Nombre de la empresa" name="companyName" required placeholder="Acme Corp" />
           <Field label="Dominio (opcional)" name="companyDomain" placeholder="acme.com" />
@@ -52,11 +56,11 @@ export default function NewLeadPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium text-slate-700">Tecnología</label>
+            <label className="text-sm font-medium text-ink">Tecnología</label>
             <select
               name="technology"
               required
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-dolphin-500 focus:outline-none focus:ring-1 focus:ring-dolphin-500"
+              className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-dolphin-500 focus:outline-none focus:ring-1 focus:ring-dolphin-500"
             >
               {TECHNOLOGIES.map((t) => (
                 <option key={t} value={t}>
@@ -66,10 +70,10 @@ export default function NewLeadPage() {
             </select>
           </div>
           <div>
-            <label className="text-sm font-medium text-slate-700">Tipo de señal</label>
+            <label className="text-sm font-medium text-ink">Tipo de señal</label>
             <select
               name="signalType"
-              className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-dolphin-500 focus:outline-none focus:ring-1 focus:ring-dolphin-500"
+              className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-dolphin-500 focus:outline-none focus:ring-1 focus:ring-dolphin-500"
             >
               {SIGNAL_TYPES.map((t) => (
                 <option key={t.value} value={t.value}>
@@ -81,7 +85,7 @@ export default function NewLeadPage() {
         </div>
 
         <div>
-          <label className="text-sm font-medium text-slate-700">Prioridad</label>
+          <label className="text-sm font-medium text-ink">Prioridad</label>
           <div className="mt-1 flex gap-3">
             {["alta", "media", "baja"].map((p, i) => (
               <label key={p} className="flex items-center gap-2 text-sm capitalize text-slate-600">
@@ -94,7 +98,7 @@ export default function NewLeadPage() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="text-sm font-medium text-slate-700">Modalidad</label>
+            <label className="text-sm font-medium text-ink">Modalidad</label>
             <div className="mt-1 flex gap-3">
               {[
                 { value: "remoto", label: "Remoto" },
@@ -128,20 +132,20 @@ export default function NewLeadPage() {
         />
 
         <div>
-          <label className="text-sm font-medium text-slate-700">
+          <label className="text-sm font-medium text-ink">
             Pega el texto de la publicación / contexto (opcional)
           </label>
           <textarea
             name="rawText"
             rows={5}
-            className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-dolphin-500 focus:outline-none focus:ring-1 focus:ring-dolphin-500"
+            className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-dolphin-500 focus:outline-none focus:ring-1 focus:ring-dolphin-500"
             placeholder="Pega aquí el texto de la publicación o una descripción de lo que viste..."
           />
         </div>
 
         <button
           type="submit"
-          className="w-full rounded-md bg-dolphin-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-dolphin-700"
+          className="w-full rounded-xl bg-dolphin-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-dolphin-700"
         >
           Guardar señal
         </button>
@@ -165,13 +169,13 @@ function Field({
 }) {
   return (
     <div>
-      <label className="text-sm font-medium text-slate-700">{label}</label>
+      <label className="text-sm font-medium text-ink">{label}</label>
       <input
         type={type}
         name={name}
         required={required}
         placeholder={placeholder}
-        className="mt-1 w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-dolphin-500 focus:outline-none focus:ring-1 focus:ring-dolphin-500"
+        className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-dolphin-500 focus:outline-none focus:ring-1 focus:ring-dolphin-500"
       />
     </div>
   );

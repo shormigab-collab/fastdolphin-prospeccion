@@ -156,8 +156,10 @@ export async function saveContactForSignal(
     name: string;
     title?: string | null;
     email?: string | null;
+    emailStatus?: string | null;
     phone?: string | null;
     linkedinUrl?: string | null;
+    apolloId?: string | null;
   }
 ) {
   await sql`
@@ -165,8 +167,10 @@ export async function saveContactForSignal(
     set contact_name = ${contact.name},
         contact_title = ${contact.title ?? null},
         contact_email = ${contact.email ?? null},
+        contact_email_status = ${contact.emailStatus ?? null},
         contact_phone = ${contact.phone ?? null},
         contact_linkedin_url = ${contact.linkedinUrl ?? null},
+        contact_apollo_id = ${contact.apolloId ?? null},
         contact_looked_up_at = now()
     where id = ${signalId}
   `;
@@ -176,10 +180,29 @@ export async function updateSignalStatus(signalId: string, status: SignalStatus)
   await sql`update signals set status = ${status} where id = ${signalId}`;
 }
 
-export async function insertMessageDraft(params: { signalId: string; draftText: string }) {
+export async function insertMessageDraft(params: {
+  signalId: string;
+  draftText: string;
+  channel?: "linkedin" | "email";
+  subject?: string | null;
+}) {
   await sql`
-    insert into messages (signal_id, channel, draft_text, status, suggested_by)
-    values (${params.signalId}, 'linkedin', ${params.draftText}, 'pendiente_aprobacion', 'system')
+    insert into messages (signal_id, channel, subject, draft_text, status, suggested_by)
+    values (
+      ${params.signalId}, ${params.channel ?? "linkedin"}, ${params.subject ?? null},
+      ${params.draftText}, 'pendiente_aprobacion', 'system'
+    )
+  `;
+}
+
+export async function updateMessageDraft(
+  messageId: string,
+  params: { draftText: string; subject?: string | null }
+) {
+  await sql`
+    update messages
+    set draft_text = ${params.draftText}, subject = ${params.subject ?? null}
+    where id = ${messageId}
   `;
 }
 
@@ -205,6 +228,61 @@ export async function addNote(params: { signalId: string; authorId: string | nul
     insert into notes (signal_id, author_id, body)
     values (${params.signalId}, ${params.authorId}, ${params.body})
   `;
+}
+
+export interface RecentActivityItem {
+  kind: "note" | "status" | "created";
+  at: string;
+  signal_id: string;
+  signal_title: string;
+  company_name: string;
+  status: SignalStatus;
+  note_body: string | null;
+  author_name: string | null;
+}
+
+// Actividad reciente real (no inventada): combina notas agregadas, cambios
+// de estado (detectados por updated_at != created_at) y señales nuevas.
+// Se usa en el resumen/dashboard.
+export async function listRecentActivity(limit = 6) {
+  const rows = (await sql`
+    (
+      select 'note' as kind, n.created_at as at, s.id as signal_id, s.title as signal_title,
+        c.name as company_name, s.status as status, n.body as note_body,
+        u.full_name as author_name
+      from notes n
+      join signals s on s.id = n.signal_id
+      join companies c on c.id = s.company_id
+      left join users u on u.id = n.author_id
+      order by n.created_at desc
+      limit ${limit}
+    )
+    union all
+    (
+      select 'status' as kind, s.updated_at as at, s.id as signal_id, s.title as signal_title,
+        c.name as company_name, s.status as status, null as note_body,
+        null as author_name
+      from signals s
+      join companies c on c.id = s.company_id
+      where s.updated_at <> s.created_at
+      order by s.updated_at desc
+      limit ${limit}
+    )
+    union all
+    (
+      select 'created' as kind, s.created_at as at, s.id as signal_id, s.title as signal_title,
+        c.name as company_name, s.status as status, null as note_body,
+        null as author_name
+      from signals s
+      join companies c on c.id = s.company_id
+      order by s.created_at desc
+      limit ${limit}
+    )
+    order by at desc
+    limit ${limit}
+  `) as unknown as RecentActivityItem[];
+
+  return rows;
 }
 
 export async function listUsers() {

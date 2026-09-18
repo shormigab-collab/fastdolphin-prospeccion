@@ -109,3 +109,8 @@ export function generateOutreachDraft(
 export function suggestionsForSignal(signal: Signal) {
   return TECH_PITCH[signal.technology];
 }
+
+// Asunto sugerido para el borrador de correo (pestaña "Correo" del editor).
+export function generateEmailSubject(technology: Technology) {
+  return `Apoyo con talento ${technology}`;
+}

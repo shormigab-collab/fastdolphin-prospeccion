@@ -11,7 +11,7 @@ const statusStyles: Record<SignalStatus, string> = {
   descartado: "bg-slate-100 text-slate-500",
 };
 
-const statusLabels: Record<SignalStatus, string> = {
+export const statusLabels: Record<SignalStatus, string> = {
   nuevo: "Nuevo",
   calificando: "Calificando",
   contactado: "Contactado",

@@ -52,12 +52,12 @@ export function ApolloSync() {
   }
 
   return (
-    <div className="mt-3 rounded-md bg-slate-50 p-3">
+    <div className="mt-3 rounded-xl bg-slate-50 p-3">
       <div className="flex flex-wrap items-center gap-2">
         <select
           value={technology}
           onChange={(e) => setTechnology(e.target.value as Technology)}
-          className="rounded-md border border-slate-300 px-2 py-1.5 text-sm focus:border-dolphin-500 focus:outline-none focus:ring-1 focus:ring-dolphin-500"
+          className="rounded-xl border border-slate-300 px-2 py-1.5 text-sm focus:border-dolphin-500 focus:outline-none focus:ring-1 focus:ring-dolphin-500"
         >
           {TECHNOLOGIES.map((t) => (
             <option key={t} value={t}>
@@ -68,7 +68,7 @@ export function ApolloSync() {
         <button
           onClick={handleSync}
           disabled={loading}
-          className="rounded-md bg-dolphin-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-dolphin-700 disabled:opacity-60"
+          className="rounded-xl bg-dolphin-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-dolphin-700 disabled:opacity-60"
         >
           {loading ? "Sincronizando..." : "Sincronizar ahora"}
         </button>

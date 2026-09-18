@@ -23,7 +23,23 @@ export default function RootLayout({
 }) {
   return (
     <html lang="es">
-      <body>
+      <head>
+        {/*
+          Inter cargada como hoja de estilo normal (no con next/font/google)
+          a propósito: next/font descarga la fuente en build time, y si esa
+          descarga falla por cualquier razón de red, se cae el build entero
+          (ya tuvimos suficientes dolores de cabeza con builds rotos). Así,
+          la fuente se pide desde el navegador de cada visitante, como
+          cualquier página web normal — nunca puede tumbar el deploy.
+        */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        <link
+          href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap"
+          rel="stylesheet"
+        />
+      </head>
+      <body className="font-sans">
         <Providers>{children}</Providers>
       </body>
     </html>

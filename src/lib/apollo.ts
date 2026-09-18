@@ -64,7 +64,7 @@ export async function fetchApolloSignals(
   const keywords = TECH_KEYWORDS[technology];
 
   try {
-    const res = await fetch("https://api.apollo.io/v1/mixed_companies/search", {
+    const res = await fetch("https://api.apollo.io/api/v1/mixed_companies/search", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -128,8 +128,12 @@ export async function fetchApolloSignals(
 //      planes que lo soportan — así que si no viene, lo mostramos como "no
 //      disponible" en vez de tratarlo como error.
 //
-// Documentación: https://docs.apollo.io/reference/people-search
+// Documentación: https://docs.apollo.io/reference/people-api-search
 //                https://docs.apollo.io/reference/people-enrichment
+//
+// Nota: Apollo movió toda su API a rutas /api/v1/... (antes eran /v1/...) y
+// además renombró el endpoint de personas de mixed_people/search a
+// mixed_people/api_search — el código de acá ya usa las rutas nuevas.
 // ---------------------------------------------------------------------------
 
 const CONTACT_TITLES = [
@@ -143,6 +147,7 @@ const CONTACT_TITLES = [
 ];
 
 export interface ApolloContact {
+  apolloId: string | null;
   name: string;
   title: string | null;
   email: string | null;
@@ -156,6 +161,33 @@ export interface ApolloContactResult {
   error?: string;
 }
 
+// El endpoint de personas filtra por dominio, no por nombre de empresa. Si
+// la señal no tiene un dominio guardado (pasa seguido con carga manual de
+// LinkedIn), primero se busca la empresa por nombre en organization search
+// para conseguir su dominio, y con eso sí se puede buscar a la persona.
+async function resolveCompanyDomain(companyName: string): Promise<string | null> {
+  try {
+    const res = await fetch("https://api.apollo.io/api/v1/mixed_companies/search", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "X-Api-Key": APOLLO_API_KEY as string,
+      },
+      body: JSON.stringify({
+        q_organization_name: companyName,
+        page: 1,
+        per_page: 1,
+      }),
+    });
+    if (!res.ok) return null;
+    const data = await res.json().catch(() => null);
+    const org = (data?.organizations as Array<Record<string, unknown>>)?.[0];
+    return (org?.primary_domain as string) ?? (org?.website_url as string) ?? null;
+  } catch {
+    return null;
+  }
+}
+
 export async function findCompanyContact(params: {
   companyName: string;
   companyDomain?: string | null;
@@ -165,16 +197,23 @@ export async function findCompanyContact(params: {
   }
 
   try {
-    const searchRes = await fetch("https://api.apollo.io/v1/mixed_people/search", {
+    const domain = params.companyDomain || (await resolveCompanyDomain(params.companyName));
+
+    if (!domain) {
+      return {
+        error:
+          "No se pudo determinar el dominio de la empresa en Apollo.io (ni el guardado ni buscando por nombre), y este endpoint solo filtra por dominio.",
+      };
+    }
+
+    const searchRes = await fetch("https://api.apollo.io/api/v1/mixed_people/api_search", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         "X-Api-Key": APOLLO_API_KEY,
       },
       body: JSON.stringify({
-        ...(params.companyDomain
-          ? { q_organization_domains: params.companyDomain }
-          : { organization_name: params.companyName }),
+        q_organization_domains_list: [domain],
         person_titles: CONTACT_TITLES,
         page: 1,
         per_page: 1,
@@ -198,7 +237,7 @@ export async function findCompanyContact(params: {
       return { contact: null };
     }
 
-    const matchRes = await fetch("https://api.apollo.io/v1/people/match", {
+    const matchRes = await fetch("https://api.apollo.io/api/v1/people/match", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -213,6 +252,7 @@ export async function findCompanyContact(params: {
     const matchData = await matchRes.json().catch(() => null);
 
     const baseContact: ApolloContact = {
+      apolloId: (person.id as string) ?? null,
       name: (person.name as string) ?? "Contacto sin nombre",
       title: (person.title as string) ?? null,
       email: null,
@@ -234,6 +274,7 @@ export async function findCompanyContact(params: {
 
     return {
       contact: {
+        apolloId: (matched.id as string) ?? baseContact.apolloId,
         name: (matched.name as string) ?? baseContact.name,
         title: (matched.title as string) ?? baseContact.title,
         email: (matched.email as string) ?? null,

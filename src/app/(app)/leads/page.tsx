@@ -48,9 +48,10 @@ export default async function LeadsPage({
 
   return (
     <div className="mx-auto max-w-6xl px-8 py-10">
-      <div className="flex items-center justify-between">
+      <p className="text-xs font-medium text-slate-400">Prospección / Señales</p>
+      <div className="mt-1 flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Señales / Leads</h1>
+          <h1 className="text-2xl font-bold text-ink">Señales / Leads</h1>
           <p className="mt-1 text-sm text-slate-500">
             {signals.length} señales encontradas
             {!showAll && hiddenCount > 0 && (
@@ -76,7 +77,7 @@ export default async function LeadsPage({
         </div>
         <Link
           href="/leads/new"
-          className="rounded-md bg-dolphin-600 px-4 py-2 text-sm font-semibold text-white hover:bg-dolphin-700"
+          className="rounded-xl bg-dolphin-600 px-4 py-2 text-sm font-semibold text-white shadow-card hover:bg-dolphin-700"
         >
           + Cargar de LinkedIn
         </Link>
@@ -121,7 +122,7 @@ export default async function LeadsPage({
         ))}
       </div>
 
-      <div className="mt-6 overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <div className="mt-6 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card">
         <table className="min-w-full divide-y divide-slate-200 text-sm">
           <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
             <tr>
@@ -137,8 +138,12 @@ export default async function LeadsPage({
           <tbody className="divide-y divide-slate-100">
             {signals.map((s) => (
               <tr key={s.id} className="hover:bg-slate-50">
-                <td className="px-4 py-3">
-                  <Link href={`/leads/${s.id}`} className="font-medium text-dolphin-700 hover:underline">
+                <td className="max-w-xs px-4 py-3">
+                  <Link
+                    href={`/leads/${s.id}`}
+                    className="font-medium text-dolphin-700 hover:underline"
+                    title={s.title}
+                  >
                     {s.title}
                   </Link>
                 </td>
@@ -193,7 +198,7 @@ function FilterLink({
         (active
           ? variant === "tech"
             ? "border-dolphin-600 bg-dolphin-600 text-white"
-            : "border-slate-800 bg-slate-800 text-white"
+            : "border-ink bg-ink text-white"
           : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50")
       }
     >

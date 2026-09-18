@@ -8,13 +8,14 @@ export default async function SettingsPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-8 py-10">
-      <h1 className="text-2xl font-bold text-slate-900">Configuración</h1>
+      <p className="text-xs font-medium text-slate-400">Prospección / Configuración</p>
+      <h1 className="mt-1 text-2xl font-bold text-ink">Configuración</h1>
 
-      <div className="mt-8 rounded-lg border border-slate-200 bg-white p-5">
+      <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
           Fuentes de señales
         </h2>
-        <div className="mt-3 flex items-center justify-between rounded-md bg-slate-50 p-3">
+        <div className="mt-3 flex items-center justify-between rounded-xl bg-slate-50 p-3">
           <div>
             <div className="text-sm font-medium text-slate-800">Apollo.io</div>
             <div className="text-xs text-slate-500">
@@ -42,7 +43,7 @@ export default async function SettingsPage() {
         )}
       </div>
 
-      <div className="mt-8 rounded-lg border border-slate-200 bg-white p-5">
+      <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
           Equipo con acceso
         </h2>

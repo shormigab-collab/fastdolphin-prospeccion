@@ -5,6 +5,7 @@ import type {
   Note,
   SignalStatus,
   SignalPriority,
+  SignalSource,
   SignalType,
   Technology,
   WorkMode,
@@ -270,53 +271,91 @@ export async function addNote(params: { signalId: string; authorId: string | nul
 }
 
 export interface RecentActivityItem {
-  kind: "note" | "status" | "created";
+  kind: "note" | "status" | "created" | "contact";
   at: string;
   signal_id: string;
   signal_title: string;
   company_name: string;
+  company_domain: string | null;
+  technology: Technology;
+  source: SignalSource;
   status: SignalStatus;
   note_body: string | null;
+  contact_name: string | null;
   author_name: string | null;
 }
 
+export interface RecentActivityFilter {
+  // undefined = todas las pestañas ("Todas")
+  kind?: "note" | "status" | "created" | "contact";
+  // undefined/"all" = sin límite de fecha
+  range?: "today" | "7d" | "30d" | "all";
+  limit?: number;
+}
+
 // Actividad reciente real (no inventada): combina notas agregadas, cambios
-// de estado (detectados por updated_at != created_at) y señales nuevas.
-// Se usa en el resumen/dashboard.
-export async function listRecentActivity(limit = 6) {
+// de estado (detectados por updated_at != created_at), señales nuevas y
+// búsquedas de contacto exitosas (detectadas por contact_looked_up_at). Se
+// usa en el resumen/dashboard, con filtros de pestaña ("Señales" /
+// "Contactos" / "Seguimientos") y de rango de fecha.
+export async function listRecentActivity(filter?: RecentActivityFilter) {
+  const limit = filter?.limit ?? 12;
+  const rangeInterval =
+    filter?.range === "today"
+      ? "1 day"
+      : filter?.range === "7d"
+        ? "7 days"
+        : filter?.range === "30d"
+          ? "30 days"
+          : null;
+
   const rows = (await sql`
-    (
-      select 'note' as kind, n.created_at as at, s.id as signal_id, s.title as signal_title,
-        c.name as company_name, s.status as status, n.body as note_body,
-        u.full_name as author_name
-      from notes n
-      join signals s on s.id = n.signal_id
-      join companies c on c.id = s.company_id
-      left join users u on u.id = n.author_id
-      order by n.created_at desc
-      limit ${limit}
-    )
-    union all
-    (
-      select 'status' as kind, s.updated_at as at, s.id as signal_id, s.title as signal_title,
-        c.name as company_name, s.status as status, null as note_body,
-        null as author_name
-      from signals s
-      join companies c on c.id = s.company_id
-      where s.updated_at <> s.created_at
-      order by s.updated_at desc
-      limit ${limit}
-    )
-    union all
-    (
-      select 'created' as kind, s.created_at as at, s.id as signal_id, s.title as signal_title,
-        c.name as company_name, s.status as status, null as note_body,
-        null as author_name
-      from signals s
-      join companies c on c.id = s.company_id
-      order by s.created_at desc
-      limit ${limit}
-    )
+    select * from (
+      (
+        select 'note' as kind, n.created_at as at, s.id as signal_id, s.title as signal_title,
+          c.name as company_name, c.domain as company_domain, s.technology as technology,
+          s.source as source, s.status as status, n.body as note_body,
+          null as contact_name, u.full_name as author_name
+        from notes n
+        join signals s on s.id = n.signal_id
+        join companies c on c.id = s.company_id
+        left join users u on u.id = n.author_id
+      )
+      union all
+      (
+        select 'status' as kind, s.updated_at as at, s.id as signal_id, s.title as signal_title,
+          c.name as company_name, c.domain as company_domain, s.technology as technology,
+          s.source as source, s.status as status, null as note_body,
+          null as contact_name, null as author_name
+        from signals s
+        join companies c on c.id = s.company_id
+        where s.updated_at <> s.created_at
+      )
+      union all
+      (
+        select 'created' as kind, s.created_at as at, s.id as signal_id, s.title as signal_title,
+          c.name as company_name, c.domain as company_domain, s.technology as technology,
+          s.source as source, s.status as status, null as note_body,
+          null as contact_name, null as author_name
+        from signals s
+        join companies c on c.id = s.company_id
+      )
+      union all
+      (
+        select 'contact' as kind, s.contact_looked_up_at as at, s.id as signal_id, s.title as signal_title,
+          c.name as company_name, c.domain as company_domain, s.technology as technology,
+          s.source as source, s.status as status, null as note_body,
+          s.contact_name as contact_name, null as author_name
+        from signals s
+        join companies c on c.id = s.company_id
+        where s.contact_looked_up_at is not null
+      )
+    ) activity
+    where (${filter?.kind ?? null}::text is null or kind = ${filter?.kind ?? null})
+      and (
+        ${rangeInterval}::text is null
+        or at >= now() - (${rangeInterval})::interval
+      )
     order by at desc
     limit ${limit}
   `) as unknown as RecentActivityItem[];

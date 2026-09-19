@@ -1,9 +1,8 @@
 import Link from "next/link";
 import { listSignals, listRecentActivity } from "@/lib/queries";
-import { StatusBadge, TechBadge, SourceBadge, statusLabels } from "@/components/Badges";
-import { timeAgo } from "@/lib/time";
+import { StatusBadge, TechBadge, SourceBadge } from "@/components/Badges";
 import { IconTarget } from "@/components/icons";
-import type { SignalStatus } from "@/lib/types";
+import { RecentActivity } from "./RecentActivity";
 
 type View = "todas" | "alta" | "sin_contactar";
 
@@ -12,7 +11,10 @@ export default async function DashboardPage({
 }: {
   searchParams: { view?: string };
 }) {
-  const [all, activity] = await Promise.all([listSignals(), listRecentActivity(6)]);
+  const [all, activity] = await Promise.all([
+    listSignals(),
+    listRecentActivity({ range: "today", limit: 12 }),
+  ]);
 
   const view: View =
     searchParams.view === "alta" || searchParams.view === "sin_contactar"
@@ -191,56 +193,9 @@ export default async function DashboardPage({
         </div>
       </div>
 
-      <div className="mt-10">
-        <div className="flex items-center justify-between">
-          <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-            Actividad reciente
-          </h2>
-          <Link href="/leads" className="text-xs font-medium text-dolphin-600 hover:underline">
-            Ver toda la actividad →
-          </Link>
-        </div>
-        <div className="mt-3 divide-y divide-slate-100 rounded-2xl border border-slate-200 bg-white shadow-card">
-          {activity.length === 0 && (
-            <p className="p-6 text-sm text-slate-500">
-              Aún no hay actividad registrada. Aparecerá aquí en cuanto agregues
-              notas o cambies el estado de una señal.
-            </p>
-          )}
-          {activity.map((a, i) => (
-            <Link
-              key={`${a.kind}-${a.signal_id}-${i}`}
-              href={`/leads/${a.signal_id}`}
-              className="block px-4 py-3 hover:bg-slate-50"
-            >
-              <p className="text-sm text-ink">{describeActivity(a)}</p>
-              <p className="mt-0.5 text-xs text-slate-400">
-                {timeAgo(a.at)}
-                {a.author_name ? ` · por ${a.author_name}` : ""}
-              </p>
-            </Link>
-          ))}
-        </div>
-      </div>
+      <RecentActivity initialItems={activity} />
     </div>
   );
-}
-
-function describeActivity(a: {
-  kind: "note" | "status" | "created";
-  signal_title: string;
-  company_name: string;
-  status: SignalStatus;
-  note_body: string | null;
-}) {
-  if (a.kind === "note") {
-    const preview = (a.note_body ?? "").slice(0, 80);
-    return `Nueva nota en ${a.company_name} — "${preview}${(a.note_body?.length ?? 0) > 80 ? "…" : ""}"`;
-  }
-  if (a.kind === "created") {
-    return `Nueva señal detectada en ${a.company_name}: ${a.signal_title}`;
-  }
-  return `${a.company_name} pasó a estado "${statusLabels[a.status]}"`;
 }
 
 

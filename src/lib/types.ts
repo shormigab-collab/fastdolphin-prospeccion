@@ -38,6 +38,7 @@ export interface Company {
   industry: string | null;
   size_range: string | null;
   linkedin_url: string | null;
+  careers_url: string | null;
   notes: string | null;
   created_at: string;
 }
@@ -65,6 +66,7 @@ export interface Signal {
   contact_looked_up_at: string | null;
   vacancy_confirmed_at: string | null;
   vacancy_confirmed_by: string | null;
+  origin_label: string | null;
   assigned_to: string | null;
   detected_at: string;
   created_by: string | null;

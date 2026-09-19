@@ -26,7 +26,7 @@ export async function listSignals(filter?: {
       json_build_object(
         'id', c.id, 'name', c.name, 'domain', c.domain, 'industry', c.industry,
         'size_range', c.size_range, 'linkedin_url', c.linkedin_url,
-        'notes', c.notes, 'created_at', c.created_at
+        'careers_url', c.careers_url, 'notes', c.notes, 'created_at', c.created_at
       ) as company
     from signals s
     join companies c on c.id = s.company_id
@@ -53,7 +53,7 @@ export async function getSignalById(id: string) {
       json_build_object(
         'id', c.id, 'name', c.name, 'domain', c.domain, 'industry', c.industry,
         'size_range', c.size_range, 'linkedin_url', c.linkedin_url,
-        'notes', c.notes, 'created_at', c.created_at
+        'careers_url', c.careers_url, 'notes', c.notes, 'created_at', c.created_at
       ) as company
     from signals s
     join companies c on c.id = s.company_id
@@ -107,22 +107,36 @@ export async function createManualSignal(params: {
   sourceUrl?: string | null;
   rawText?: string | null;
   createdBy?: string | null;
+  // De dónde salió (LinkedIn, Indeed, Computrabajo, página de la empresa,
+  // etc.) — internamente sigue guardándose como source='linkedin_import'
+  // por compatibilidad con la restricción de la base de datos, pero este
+  // campo aparte guarda de dónde salió de verdad para mostrarlo bien.
+  originLabel?: string | null;
 }) {
   const rows = (await sql`
     insert into signals (
       company_id, title, technology, signal_type, priority, source,
-      source_url, raw_text, status, created_by, work_mode, location
+      source_url, raw_text, status, created_by, work_mode, location, origin_label
     )
     values (
       ${params.companyId}, ${params.title}, ${params.technology}, ${params.signalType},
       ${params.priority}, 'linkedin_import', ${params.sourceUrl ?? null},
       ${params.rawText ?? null}, 'nuevo', ${params.createdBy ?? null},
-      ${params.workMode}, ${params.location ?? null}
+      ${params.workMode}, ${params.location ?? null}, ${params.originLabel ?? null}
     )
     returning id
   `) as unknown as { id: string }[];
 
   return rows[0].id;
+}
+
+// Guarda el link de la bolsa de empleo pública de la empresa (Greenhouse,
+// Lever, etc.) para poder revisar automáticamente si tienen vacantes
+// abiertas — se usa desde el detalle de cualquier señal de esa empresa.
+export async function updateCompanyCareersUrl(companyId: string, careersUrl: string) {
+  await sql`
+    update companies set careers_url = ${careersUrl} where id = ${companyId}
+  `;
 }
 
 // Cuántas señales de Apollo ya existen para esta tecnología — se usa para

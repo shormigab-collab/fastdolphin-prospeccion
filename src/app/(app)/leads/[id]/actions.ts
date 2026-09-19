@@ -13,6 +13,7 @@ import {
   updateSignalStatus,
   addNote as addNoteQuery,
   confirmVacancy,
+  updateCompanyCareersUrl,
 } from "@/lib/queries";
 import { notifyTeamOfHighPrioritySignal } from "@/lib/email";
 import type { SignalStatus } from "@/lib/types";
@@ -70,18 +71,19 @@ export async function addNoteAction(signalId: string, body: string) {
   revalidatePath(`/leads/${signalId}`);
 }
 
-// "Confirmar vacante" — alguien del equipo verificó a mano que la vacante
-// existe de verdad (Apollo, en el plan que tenemos, no puede confirmar
-// esto). Sube la señal a prioridad alta, deja constancia en las notas (para
-// que salga en "Actividad reciente"), y avisa por correo a todo el equipo
-// si el envío de correos está configurado.
-export async function confirmVacancyAction(signalId: string) {
+// Lógica compartida de "confirmar vacante": sube la señal a prioridad alta,
+// deja constancia en las notas (para que salga en "Actividad reciente"), y
+// avisa por correo a todo el equipo si el envío de correos está configurado.
+// `noteBody` deja poner un mensaje distinto según de dónde vino la
+// confirmación (a mano, o porque se encontró de verdad en una bolsa de
+// empleo pública).
+async function doConfirmVacancy(signalId: string, noteBody: string) {
   const session = await auth();
   await confirmVacancy(signalId, session?.user?.id ?? null);
   await addNoteQuery({
     signalId,
     authorId: session?.user?.id ?? null,
-    body: "Vacante confirmada manualmente — prioridad subida a alta.",
+    body: noteBody,
   });
 
   const signal = await getSignalById(signalId);
@@ -98,4 +100,38 @@ export async function confirmVacancyAction(signalId: string) {
   revalidatePath(`/leads/${signalId}`);
   revalidatePath("/leads");
   revalidatePath("/dashboard");
+}
+
+// "Confirmar vacante" — alguien del equipo verificó a mano que la vacante
+// existe de verdad (Apollo, en el plan que tenemos, no puede confirmar
+// esto).
+export async function confirmVacancyAction(signalId: string) {
+  await doConfirmVacancy(signalId, "Vacante confirmada manualmente — prioridad subida a alta.");
+}
+
+// Guarda el link de la bolsa de empleo pública (Greenhouse, Lever, etc.) de
+// la empresa dueña de esta señal, para poder revisar automáticamente si
+// tienen vacantes abiertas.
+export async function saveCareersUrlAction(
+  companyId: string,
+  signalId: string,
+  careersUrl: string
+) {
+  if (!careersUrl.trim()) return;
+  await updateCompanyCareersUrl(companyId, careersUrl.trim());
+  revalidatePath(`/leads/${signalId}`);
+}
+
+// Igual que "Confirmar vacante", pero disparado cuando la plataforma
+// encontró la vacante de verdad en la bolsa de empleo pública de la
+// empresa (Greenhouse/Lever) — queda registrado con el título y el link
+// reales de la publicación, así queda clara la evidencia.
+export async function confirmVacancyFromJobBoardAction(
+  signalId: string,
+  position: { title: string; url: string }
+) {
+  await doConfirmVacancy(
+    signalId,
+    `Vacante confirmada automáticamente — se encontró publicada en la bolsa de empleo de la empresa: "${position.title}" (${position.url}).`
+  );
 }

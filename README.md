@@ -196,6 +196,44 @@ Para activar los correos:
 Los correos se envían a todas las personas que tengan cuenta creada en la
 plataforma (`listUsers()` en `src/lib/queries.ts`).
 
+## Confirmación automática vía bolsa de empleo (Greenhouse / Lever)
+
+Además de confirmar una vacante a mano, la plataforma puede revisar
+directamente la bolsa de empleo pública de la empresa (si usa Greenhouse o
+Lever, dos sistemas de reclutamiento muy comunes que exponen su lista de
+vacantes abiertas sin necesitar ninguna llave de API) y avisar si hay algo
+que coincida con la tecnología de la señal — esto sí es una confirmación
+real de que la empresa está contratando, no solo un perfil que coincide.
+
+Cómo se usa: en el detalle de cualquier señal, en la tarjeta "Bolsa de
+empleo de la empresa", pega el link de su página de vacantes (por ejemplo
+`https://jobs.lever.co/empresa` o `https://boards.greenhouse.io/empresa` —
+normalmente se encuentra en el botón "Careers" o "Empleos" del sitio de la
+empresa) y dale a "Buscar vacantes abiertas". Si encuentra algo que
+coincide, puedes confirmar la vacante ahí mismo con un clic, y queda
+registrada con el título y el link reales de la publicación que se
+encontró.
+
+Requiere correr `db/0008_job_boards.sql` en el SQL Editor de Neon (agrega
+el campo para guardar ese link por empresa). No necesita ninguna variable
+de entorno ni cuenta nueva — es gratis y funciona apenas corras la
+migración.
+
+Limitación honesta: solo funciona para empresas que usan Greenhouse o
+Lever. Para las que usan otro sistema (Workday, SmartRecruiters, su propia
+página, etc.) no hay un endpoint público equivalente que podamos consultar
+automáticamente — para esas, sigue siendo necesario el botón "Confirmar
+vacante" a mano.
+
+## Cargar vacantes de cualquier fuente, no solo LinkedIn
+
+`/leads/new` (antes "Cargar de LinkedIn") ahora deja elegir de dónde salió
+la señal — LinkedIn, Indeed, Computrabajo, la página de la empresa, u
+otro — con un campo nuevo (`origin_label`, agregado también en
+`db/0008_job_boards.sql`). Por dentro se sigue guardando como una señal
+manual normal; el cambio es solo que ya no asume que todo viene de
+LinkedIn.
+
 ## Pasar de demo a datos reales
 
 - **Apollo.io**: agrega `APOLLO_API_KEY` en las variables de entorno.

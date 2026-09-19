@@ -10,6 +10,7 @@ import { StatusForm } from "./StatusForm";
 import { MessagePanel } from "./MessagePanel";
 import { NotesForm } from "./NotesForm";
 import { ConfirmVacancyButton } from "./ConfirmVacancyButton";
+import { JobBoardCheck } from "./JobBoardCheck";
 
 export default async function LeadDetailPage({
   params,
@@ -80,7 +81,7 @@ export default async function LeadDetailPage({
               <div>
                 <dt className="text-xs text-slate-400">Fuente</dt>
                 <dd className="mt-1 flex items-center gap-1.5">
-                  <SourceBadge source={signal.source} />
+                  <SourceBadge source={signal.source} originLabel={signal.origin_label} />
                   {signal.source_url && (
                     <a
                       href={signal.source_url}
@@ -135,6 +136,14 @@ export default async function LeadDetailPage({
               apolloId: signal.contact_apollo_id,
               lookedUpAt: signal.contact_looked_up_at,
             }}
+          />
+
+          <JobBoardCheck
+            signalId={signal.id}
+            companyId={signal.company_id}
+            technology={signal.technology}
+            careersUrl={signal.company?.careers_url ?? null}
+            alreadyConfirmed={!!signal.vacancy_confirmed_at}
           />
 
           <NotesForm signalId={signal.id} notes={notes} />

@@ -88,7 +88,7 @@ export default async function LeadsPage({
           href="/leads/new"
           className="rounded-xl bg-dolphin-600 px-4 py-2 text-sm font-semibold text-white shadow-card hover:bg-dolphin-700"
         >
-          + Cargar de LinkedIn
+          + Cargar vacante
         </Link>
       </div>
 
@@ -164,7 +164,7 @@ export default async function LeadsPage({
                   <TechBadge technology={s.technology} />
                 </td>
                 <td className="px-4 py-3">
-                  <SourceBadge source={s.source} />
+                  <SourceBadge source={s.source} originLabel={s.origin_label} />
                 </td>
                 <td className="px-4 py-3">
                   <WorkModeBadge workMode={s.work_mode} location={s.location} />

@@ -10,7 +10,7 @@ import { IconHome, IconList, IconUpload, IconSettings } from "@/components/icons
 const links = [
   { href: "/dashboard", label: "Resumen", icon: IconHome },
   { href: "/leads", label: "Señales / Leads", icon: IconList },
-  { href: "/leads/new", label: "Cargar de LinkedIn", icon: IconUpload },
+  { href: "/leads/new", label: "Cargar vacante manual", icon: IconUpload },
   { href: "/settings", label: "Configuración", icon: IconSettings },
 ];
 

@@ -21,21 +21,23 @@ const SIGNAL_TYPES = [
   { value: "otro", label: "Otro" },
 ];
 
+const ORIGINS = ["LinkedIn", "Indeed", "Computrabajo", "Página de la empresa", "Otro"];
+
 export default function NewLeadPage() {
   return (
     <div className="mx-auto max-w-2xl px-8 py-10">
-      <p className="text-xs font-medium text-slate-400">Prospección / Cargar de LinkedIn</p>
+      <p className="text-xs font-medium text-slate-400">Prospección / Cargar vacante manual</p>
       <Link href="/leads" className="mt-1 inline-block text-sm text-dolphin-600 hover:underline">
         ← Volver a señales
       </Link>
 
       <h1 className="mt-3 text-2xl font-bold text-ink">
-        Cargar señal encontrada en LinkedIn
+        Cargar señal encontrada manualmente
       </h1>
       <p className="mt-1 text-sm text-slate-500">
-        Pega lo que encontraste manualmente en LinkedIn (una publicación de
-        vacante, un post de la empresa, un cambio de liderazgo, etc.) y la
-        herramienta la suma al mismo lugar que las señales de Apollo.io.
+        Pega lo que encontraste a mano — en LinkedIn, Indeed, Computrabajo, la
+        página de la empresa, donde sea — y la herramienta la suma al mismo
+        lugar que las señales de Apollo.io.
       </p>
 
       <form
@@ -51,8 +53,22 @@ export default function NewLeadPage() {
           label="Título de la señal"
           name="title"
           required
-          placeholder='Ej: "Buscan SAP Consultant Senior en LinkedIn Jobs"'
+          placeholder='Ej: "Buscan SAP Consultant Senior"'
         />
+
+        <div>
+          <label className="text-sm font-medium text-ink">¿Dónde la encontraste?</label>
+          <select
+            name="originLabel"
+            className="mt-1 w-full rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-dolphin-500 focus:outline-none focus:ring-1 focus:ring-dolphin-500"
+          >
+            {ORIGINS.map((o) => (
+              <option key={o} value={o}>
+                {o}
+              </option>
+            ))}
+          </select>
+        </div>
 
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -125,15 +141,15 @@ export default function NewLeadPage() {
         </p>
 
         <Field
-          label="Link de la publicación de LinkedIn (opcional)"
+          label="Link de la publicación o vacante (opcional)"
           name="sourceUrl"
           type="url"
-          placeholder="https://www.linkedin.com/..."
+          placeholder="https://..."
         />
 
         <div>
           <label className="text-sm font-medium text-ink">
-            Pega el texto de la publicación / contexto (opcional)
+            Pega el texto de la vacante / contexto (opcional)
           </label>
           <textarea
             name="rawText"

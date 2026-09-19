@@ -56,13 +56,23 @@ export function PriorityBadge({ priority }: { priority: SignalPriority }) {
 const sourceLabels: Record<SignalSource, string> = {
   apollo: "Apollo.io",
   manual: "Cargado manual",
-  linkedin_import: "Import. LinkedIn",
+  linkedin_import: "Carga manual",
 };
 
-export function SourceBadge({ source }: { source: SignalSource }) {
+// originLabel es de dónde salió de verdad (LinkedIn, Indeed, Computrabajo,
+// página de la empresa...) para las señales cargadas a mano — antes se
+// asumía que siempre era LinkedIn, ahora se puede elegir.
+export function SourceBadge({
+  source,
+  originLabel,
+}: {
+  source: SignalSource;
+  originLabel?: string | null;
+}) {
+  const label = source === "linkedin_import" && originLabel ? originLabel : sourceLabels[source];
   return (
     <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">
-      {sourceLabels[source]}
+      {label}
     </span>
   );
 }

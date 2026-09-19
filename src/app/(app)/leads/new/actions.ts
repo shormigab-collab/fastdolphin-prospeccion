@@ -20,6 +20,7 @@ export async function createManualSignalAction(formData: FormData) {
   const location = String(formData.get("location") ?? "").trim();
   const sourceUrl = String(formData.get("sourceUrl") ?? "").trim();
   const rawText = String(formData.get("rawText") ?? "").trim();
+  const originLabel = String(formData.get("originLabel") ?? "LinkedIn").trim();
 
   if (!companyName || !title || !technology) {
     throw new Error("Falta empresa, título de la señal o tecnología.");
@@ -28,7 +29,7 @@ export async function createManualSignalAction(formData: FormData) {
   const companyId = await findOrCreateCompany({
     name: companyName,
     domain: companyDomain || null,
-    linkedin_url: sourceUrl || null,
+    linkedin_url: originLabel === "LinkedIn" ? sourceUrl || null : null,
   });
 
   const signalId = await createManualSignal({
@@ -42,6 +43,7 @@ export async function createManualSignalAction(formData: FormData) {
     sourceUrl: sourceUrl || null,
     rawText: rawText || null,
     createdBy: session?.user?.id ?? null,
+    originLabel: originLabel || null,
   });
 
   if (priority === "alta") {

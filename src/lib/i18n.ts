@@ -306,6 +306,10 @@ export const dict = {
       pending: "Pendiente",
       connectHelpPrefix: "Para conectarla, agrega",
       connectHelpSuffix: "en las variables de entorno de Vercel (ver README del proyecto).",
+      andWord: "y",
+      adzunaConnected: "Conectado — puedes sincronizar vacantes reales por tecnología.",
+      adzunaNotConnected:
+        "No conectada todavía. Adzuna encuentra vacantes reales publicadas hoy (no solo perfiles de empresa que coinciden con la tecnología).",
       teamAccess: "Equipo con acceso",
       noUsersYet: "Aún no hay usuarios registrados.",
       domainNotePrefix: "Solo se pueden crear cuentas con correo del dominio configurado en",
@@ -324,6 +328,17 @@ export const dict = {
       done: (created: number, skipped: number, total: number) =>
         `Listo: ${created} señal(es) nueva(s), ${skipped} ya existían (de ${total} empresas encontradas).`,
     },
+    adzunaSync: {
+      syncing: "Sincronizando...",
+      syncNow: "Sincronizar ahora",
+      help: "Busca vacantes reales publicadas hoy en Adzuna que mencionan esta tecnología, en el país elegido, y crea señales nuevas ya confirmadas (con link directo a la publicación). Cada vez que sincronizas avanza más adentro de los resultados, para traer vacantes distintas a las anteriores.",
+      genericError: "No se pudo sincronizar con Adzuna.",
+      connectionError: "No se pudo conectar con Adzuna. Intenta de nuevo.",
+      noMore:
+        "Adzuna no devolvió más vacantes nuevas para esta tecnología y país por ahora. Prueba con otro país o vuelve a intentar más adelante.",
+      done: (created: number, skipped: number, total: number) =>
+        `Listo: ${created} señal(es) nueva(s), ${skipped} ya existían (de ${total} vacantes encontradas).`,
+    },
     status: {
       nuevo: "Nuevo",
       calificando: "Calificando",
@@ -337,6 +352,7 @@ export const dict = {
       apollo: "Apollo.io",
       manual: "Cargado manual",
       linkedin_import: "Carga manual",
+      adzuna: "Adzuna",
     },
     workMode: {
       remoto: "Remoto",
@@ -640,6 +656,10 @@ export const dict = {
       pending: "Pending",
       connectHelpPrefix: "To connect it, add",
       connectHelpSuffix: "to your Vercel environment variables (see the project README).",
+      andWord: "and",
+      adzunaConnected: "Connected — you can sync real job postings by technology.",
+      adzunaNotConnected:
+        "Not connected yet. Adzuna finds real job postings published today (not just company profiles that match the technology).",
       teamAccess: "Team with access",
       noUsersYet: "No users registered yet.",
       domainNotePrefix: "Accounts can only be created with an email from the domain set in",
@@ -658,6 +678,17 @@ export const dict = {
       done: (created: number, skipped: number, total: number) =>
         `Done: ${created} new signal(s), ${skipped} already existed (out of ${total} companies found).`,
     },
+    adzunaSync: {
+      syncing: "Syncing...",
+      syncNow: "Sync now",
+      help: "Searches Adzuna for real job postings published today that mention this technology, in the chosen country, and creates new already-confirmed signals (with a direct link to the posting). Each time you sync, it moves further into the results, to bring in different postings than before.",
+      genericError: "Could not sync with Adzuna.",
+      connectionError: "Could not connect to Adzuna. Try again.",
+      noMore:
+        "Adzuna didn't return any more new postings for this technology and country right now. Try another country or try again later.",
+      done: (created: number, skipped: number, total: number) =>
+        `Done: ${created} new signal(s), ${skipped} already existed (out of ${total} postings found).`,
+    },
     status: {
       nuevo: "New",
       calificando: "Qualifying",
@@ -671,6 +702,7 @@ export const dict = {
       apollo: "Apollo.io",
       manual: "Manually loaded",
       linkedin_import: "Manually loaded",
+      adzuna: "Adzuna",
     },
     workMode: {
       remoto: "Remote",

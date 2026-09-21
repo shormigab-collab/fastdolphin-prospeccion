@@ -20,7 +20,7 @@ export type SignalStatus =
 
 export type SignalPriority = "alta" | "media" | "baja";
 
-export type SignalSource = "apollo" | "manual" | "linkedin_import";
+export type SignalSource = "apollo" | "manual" | "linkedin_import" | "adzuna";
 
 export type WorkMode = "remoto" | "hibrido" | "presencial";
 

@@ -190,6 +190,59 @@ export async function createApolloSignal(params: {
   return rows[0].id;
 }
 
+// Evita crear dos veces la misma vacante real de Adzuna si el equipo
+// sincroniza varias veces — a diferencia de Apollo (que dedupe por
+// empresa+tecnología, porque solo hay una señal de "perfil coincide" por
+// empresa), acá cada vacante real tiene su propio link, así que ese link
+// es la forma correcta de reconocer un duplicado.
+export async function findSignalBySourceUrl(sourceUrl: string) {
+  const rows = (await sql`
+    select id from signals where source_url = ${sourceUrl} limit 1
+  `) as unknown as { id: string }[];
+
+  return rows[0]?.id ?? null;
+}
+
+// Igual que countApolloSignalsForTechnology, pero para Adzuna — cuántas
+// señales de Adzuna ya existen para esta tecnología, para calcular qué
+// "página" de resultados pedir en la próxima sincronización.
+export async function countAdzunaSignalsForTechnology(technology: Technology) {
+  const rows = (await sql`
+    select count(*)::int as count from signals
+    where technology = ${technology} and source = 'adzuna'
+  `) as unknown as { count: number }[];
+
+  return rows[0]?.count ?? 0;
+}
+
+// Crea una señal a partir de una vacante real encontrada en Adzuna. A
+// diferencia de Apollo (que solo compara perfil y entra en prioridad
+// media), esto es una vacante publicada de verdad hoy — con link directo a
+// la publicación — así que entra ya confirmada, en prioridad alta.
+export async function createAdzunaSignal(params: {
+  companyId: string;
+  title: string;
+  technology: Technology;
+  sourceUrl: string;
+  location?: string | null;
+  workMode: WorkMode;
+}) {
+  const rows = (await sql`
+    insert into signals (
+      company_id, title, technology, signal_type, priority, source,
+      source_url, status, work_mode, location, vacancy_confirmed_at
+    )
+    values (
+      ${params.companyId}, ${params.title}, ${params.technology}, 'vacante_publicada',
+      'alta', 'adzuna', ${params.sourceUrl}, 'nuevo', ${params.workMode},
+      ${params.location ?? null}, now()
+    )
+    returning id
+  `) as unknown as { id: string }[];
+
+  return rows[0].id;
+}
+
 export async function saveContactForSignal(
   signalId: string,
   contact: {

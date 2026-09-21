@@ -30,8 +30,10 @@ export interface JobBoardCheckResult {
 
 // Palabras clave que sí suelen aparecer en el TÍTULO de una vacante
 // publicada (distinto de TECH_KEYWORDS en apollo.ts, que busca coincidencia
-// de perfil de empresa, no título de puesto).
-const TITLE_KEYWORDS: Record<string, string[]> = {
+// de perfil de empresa, no título de puesto). Exportado porque adzuna.ts
+// también lo usa — ahí también estamos buscando vacantes reales por título,
+// no perfiles de empresa.
+export const TITLE_KEYWORDS: Record<string, string[]> = {
   SAP: ["sap", "s/4hana"],
   Oracle: ["oracle"],
   Salesforce: ["salesforce"],

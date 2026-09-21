@@ -225,6 +225,55 @@ página, etc.) no hay un endpoint público equivalente que podamos consultar
 automáticamente — para esas, sigue siendo necesario el botón "Confirmar
 vacante" a mano.
 
+## Detección automática de vacantes reales por tecnología (Adzuna)
+
+Además de Apollo (que compara el *perfil* de una empresa con una tecnología,
+sin saber si de verdad están contratando) y de la confirmación vía
+Greenhouse/Lever (que requiere ya tener el link de esa empresa), la
+plataforma puede **buscar directamente vacantes reales publicadas hoy** que
+mencionen SAP, Oracle, Salesforce, Cloud/DevOps, Datos/IA, Desarrollo, QA,
+Ciberseguridad o PM/Consultoría, usando [Adzuna](https://developer.adzuna.com),
+un buscador de empleo con capa gratis (solo requiere registrarse, sin
+tarjeta, cientos de consultas al día) y cobertura en EE.UU. y Canadá.
+
+Cómo se usa: en Configuración (`/settings`), en la tarjeta "Adzuna", elige
+tecnología y país y dale a "Sincronizar ahora". Cada vacante que encuentra
+ya trae el link directo a la publicación real, así que las señales que crea
+entran **ya confirmadas** (prioridad alta, sin necesitar el botón
+"Confirmar vacante" aparte) — a diferencia de las señales de Apollo, que
+siguen entrando como corazonada a verificar.
+
+Para activarlo:
+
+1. Crea una cuenta gratis en https://developer.adzuna.com/ y genera tu
+   `app_id` y `app_key`.
+2. Agrega `ADZUNA_APP_ID` y `ADZUNA_APP_KEY` en las variables de entorno de
+   Vercel.
+3. Corre `db/0009_adzuna.sql` en el SQL Editor de Neon (agrega `'adzuna'`
+   como fuente válida de señal).
+
+Mientras no estén configuradas esas dos variables, la tarjeta de Adzuna en
+Configuración simplemente aparece como "Pendiente" y no se puede
+sincronizar — el resto de la app sigue funcionando igual.
+
+Limitaciones honestas:
+
+- Adzuna no siempre indica de forma confiable si el puesto es remoto — la
+  app usa una heurística (busca "remote"/"remoto" en el título y la
+  ubicación) para decidirlo; si no encuentra esa palabra, lo guarda como
+  presencial. Combinado con el filtro de modalidad (solo remoto, o
+  presencial/híbrido en México o Brasil), eso simplemente hace que esa señal
+  no aparezca por defecto salvo que se elija "ver todas" — es preferible
+  ocultarla a asumir que es remota sin evidencia.
+- Solo cubre EE.UU. y Canadá por ahora (los dos mercados principales de
+  Fast Dolphin); Adzuna tiene más países disponibles si luego hace falta
+  ampliarlo (`src/lib/adzuna.ts`, arreglo `ADZUNA_COUNTRIES`).
+- Igual que con la sincronización masiva de Apollo, una sincronización de
+  Adzuna no manda correo automático al equipo aunque cree señales de
+  prioridad alta (para no saturar bandejas cuando trae varias de golpe) —
+  el correo automático sigue disparándose solo al confirmar una vacante
+  individual a mano.
+
 ## Cargar vacantes de cualquier fuente, no solo LinkedIn
 
 `/leads/new` (antes "Cargar de LinkedIn") ahora deja elegir de dónde salió

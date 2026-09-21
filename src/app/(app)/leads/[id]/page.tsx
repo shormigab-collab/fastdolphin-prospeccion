@@ -38,7 +38,7 @@ export default async function LeadDetailPage({
   });
 
   return (
-    <div className="mx-auto max-w-5xl px-8 py-10">
+    <div className="mx-auto max-w-5xl px-4 py-6 sm:px-8 sm:py-10">
       <p className="text-xs font-medium text-slate-400">
         {t.leadDetail.breadcrumbPrefix}
         {signal.company?.name ?? t.leadDetail.detailFallback}

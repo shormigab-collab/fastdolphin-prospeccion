@@ -29,6 +29,8 @@ export const dict = {
       config: "Configuración",
       logout: "Cerrar sesión",
       tagline: "Prospección",
+      openMenu: "Abrir menú",
+      closeMenu: "Cerrar menú",
     },
     home: {
       tagline: "Prospección",
@@ -386,6 +388,8 @@ export const dict = {
       config: "Settings",
       logout: "Log out",
       tagline: "Prospecting",
+      openMenu: "Open menu",
+      closeMenu: "Close menu",
     },
     home: {
       tagline: "Prospecting",

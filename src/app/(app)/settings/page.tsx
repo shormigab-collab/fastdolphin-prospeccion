@@ -14,7 +14,7 @@ export default async function SettingsPage() {
   const adzunaConnected = isAdzunaConnected();
 
   return (
-    <div className="mx-auto max-w-3xl px-8 py-10">
+    <div className="mx-auto max-w-3xl px-4 py-6 sm:px-8 sm:py-10">
       <p className="text-xs font-medium text-slate-400">{t.settings.breadcrumb}</p>
       <h1 className="mt-1 text-2xl font-bold text-ink">{t.settings.title}</h1>
 

@@ -53,7 +53,7 @@ export default async function DashboardPage({
   const prioritarias = filtered.slice(0, 6);
 
   return (
-    <div className="mx-auto max-w-6xl px-8 py-10">
+    <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-10">
       <p className="text-xs font-medium text-slate-400">{t.dashboard.breadcrumb}</p>
       <div className="mt-1 flex flex-wrap items-center justify-between gap-4">
         <div>
@@ -96,61 +96,97 @@ export default async function DashboardPage({
             </div>
           </div>
 
-          <div className="mt-3 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card">
-            <table className="min-w-full divide-y divide-slate-100 text-sm">
-              <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
-                <tr>
-                  <th className="px-4 py-3">{t.dashboard.colCompanySignal}</th>
-                  <th className="px-4 py-3">{t.dashboard.colTechnology}</th>
-                  <th className="px-4 py-3">{t.dashboard.colSource}</th>
-                  <th className="px-4 py-3">{t.dashboard.colStatus}</th>
-                  <th className="px-4 py-3 text-right">{t.dashboard.colAction}</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {prioritarias.map((s) => (
-                  <tr key={s.id} className="hover:bg-slate-50">
-                    <td className="px-4 py-3">
-                      <div className="flex items-center gap-2">
-                        {s.priority === "alta" && (
-                          <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-dolphin-600" />
-                        )}
-                        <div className="min-w-0">
-                          <div className="truncate font-medium text-ink">
-                            {s.company?.name ?? t.dashboard.unnamedCompany}
-                          </div>
-                          <div className="truncate text-xs text-slate-400">{s.title}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td className="px-4 py-3">
-                      <TechBadge technology={s.technology} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <SourceBadge source={s.source} lang={lang} />
-                    </td>
-                    <td className="px-4 py-3">
-                      <StatusBadge status={s.status} lang={lang} />
-                    </td>
-                    <td className="px-4 py-3 text-right">
-                      <Link
-                        href={`/leads/${s.id}`}
-                        className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-slate-50"
-                      >
-                        {t.dashboard.viewDetail}
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
-                {prioritarias.length === 0 && (
+          {/* Tabla — desde tablet/desktop (md+) */}
+          <div className="mt-3 hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card md:block">
+            <div className="overflow-x-auto">
+              <table className="min-w-full divide-y divide-slate-100 text-sm">
+                <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
                   <tr>
-                    <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
-                      {t.dashboard.noSignalsFilter}
-                    </td>
+                    <th className="px-4 py-3">{t.dashboard.colCompanySignal}</th>
+                    <th className="px-4 py-3">{t.dashboard.colTechnology}</th>
+                    <th className="px-4 py-3">{t.dashboard.colSource}</th>
+                    <th className="px-4 py-3">{t.dashboard.colStatus}</th>
+                    <th className="px-4 py-3 text-right">{t.dashboard.colAction}</th>
                   </tr>
-                )}
-              </tbody>
-            </table>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {prioritarias.map((s) => (
+                    <tr key={s.id} className="hover:bg-slate-50">
+                      <td className="px-4 py-3">
+                        <div className="flex items-center gap-2">
+                          {s.priority === "alta" && (
+                            <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-dolphin-600" />
+                          )}
+                          <div className="min-w-0">
+                            <div className="truncate font-medium text-ink">
+                              {s.company?.name ?? t.dashboard.unnamedCompany}
+                            </div>
+                            <div className="truncate text-xs text-slate-400">{s.title}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <TechBadge technology={s.technology} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <SourceBadge source={s.source} lang={lang} />
+                      </td>
+                      <td className="px-4 py-3">
+                        <StatusBadge status={s.status} lang={lang} />
+                      </td>
+                      <td className="px-4 py-3 text-right">
+                        <Link
+                          href={`/leads/${s.id}`}
+                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-slate-50"
+                        >
+                          {t.dashboard.viewDetail}
+                        </Link>
+                      </td>
+                    </tr>
+                  ))}
+                  {prioritarias.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-8 text-center text-slate-500">
+                        {t.dashboard.noSignalsFilter}
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+
+          {/* Tarjetas — solo en móvil */}
+          <div className="mt-3 space-y-3 md:hidden">
+            {prioritarias.map((s) => (
+              <Link
+                key={s.id}
+                href={`/leads/${s.id}`}
+                className="block rounded-2xl border border-slate-200 bg-white p-4 shadow-card hover:bg-slate-50"
+              >
+                <div className="flex items-center gap-2">
+                  {s.priority === "alta" && (
+                    <span className="h-1.5 w-1.5 shrink-0 rounded-full bg-dolphin-600" />
+                  )}
+                  <div className="min-w-0">
+                    <div className="truncate font-medium text-ink">
+                      {s.company?.name ?? t.dashboard.unnamedCompany}
+                    </div>
+                    <div className="truncate text-xs text-slate-400">{s.title}</div>
+                  </div>
+                </div>
+                <div className="mt-3 flex flex-wrap items-center gap-1.5">
+                  <TechBadge technology={s.technology} />
+                  <SourceBadge source={s.source} lang={lang} />
+                  <StatusBadge status={s.status} lang={lang} />
+                </div>
+              </Link>
+            ))}
+            {prioritarias.length === 0 && (
+              <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500 shadow-card">
+                {t.dashboard.noSignalsFilter}
+              </p>
+            )}
           </div>
         </div>
 

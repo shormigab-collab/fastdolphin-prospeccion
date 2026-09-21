@@ -16,7 +16,7 @@ export default async function AppLayout({
   if (!session?.user) redirect("/login");
 
   return (
-    <div className="flex min-h-screen">
+    <div className="flex min-h-screen flex-col lg:flex-row">
       <Sidebar email={session.user.email ?? ""} fullName={session.user.name} />
       <div className="flex-1 overflow-y-auto bg-canvas">{children}</div>
     </div>

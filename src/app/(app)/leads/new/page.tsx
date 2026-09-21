@@ -42,7 +42,7 @@ export default function NewLeadPage() {
   ];
 
   return (
-    <div className="mx-auto max-w-2xl px-8 py-10">
+    <div className="mx-auto max-w-2xl px-4 py-6 sm:px-8 sm:py-10">
       <p className="text-xs font-medium text-slate-400">{t.leadNew.breadcrumb}</p>
       <Link href="/leads" className="mt-1 inline-block text-sm text-dolphin-600 hover:underline">
         {t.leadNew.back}
@@ -55,7 +55,7 @@ export default function NewLeadPage() {
         action={createManualSignalAction}
         className="mt-8 space-y-5 rounded-2xl border border-slate-200 bg-white p-6 shadow-card"
       >
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <Field label={t.leadNew.companyName} name="companyName" required placeholder="Acme Corp" />
           <Field label={t.leadNew.companyDomain} name="companyDomain" placeholder="acme.com" />
         </div>
@@ -81,7 +81,7 @@ export default function NewLeadPage() {
           </select>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="text-sm font-medium text-ink">{t.leadNew.technology}</label>
             <select
@@ -123,7 +123,7 @@ export default function NewLeadPage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 gap-4">
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div>
             <label className="text-sm font-medium text-ink">{t.leadNew.workMode}</label>
             <div className="mt-1 flex gap-3">

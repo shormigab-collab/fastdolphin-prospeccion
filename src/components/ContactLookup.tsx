@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { IconLink } from "@/components/icons";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface InitialContact {
   name: string | null;
@@ -24,16 +25,6 @@ function initialsOf(name: string) {
     .join("");
 }
 
-function contactStatusPill(contact: InitialContact) {
-  if (!contact.email) {
-    return { label: "Sin correo", className: "bg-slate-100 text-slate-500" };
-  }
-  if (contact.emailStatus === "verified") {
-    return { label: "Correo verificado", className: "bg-emerald-50 text-emerald-700" };
-  }
-  return { label: "Correo por verificar", className: "bg-amber-50 text-amber-700" };
-}
-
 export function ContactLookup({
   signalId,
   apolloConnected,
@@ -44,11 +35,22 @@ export function ContactLookup({
   initialContact: InitialContact;
 }) {
   const router = useRouter();
+  const { t, lang } = useLanguage();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
 
   const hasContact = !!initialContact.name;
+
+  function contactStatusPill(contact: InitialContact) {
+    if (!contact.email) {
+      return { label: t.contact.noEmail, className: "bg-slate-100 text-slate-500" };
+    }
+    if (contact.emailStatus === "verified") {
+      return { label: t.contact.emailVerified, className: "bg-emerald-50 text-emerald-700" };
+    }
+    return { label: t.contact.emailToVerify, className: "bg-amber-50 text-amber-700" };
+  }
 
   async function handleLookup() {
     setLoading(true);
@@ -64,7 +66,7 @@ export function ContactLookup({
       const body = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setError(body.error ?? "No se pudo buscar el contacto en Apollo.io.");
+        setError(body.error ?? t.contact.genericError);
       } else if (!body.found) {
         setNotFound(true);
       } else {
@@ -72,7 +74,7 @@ export function ContactLookup({
         router.refresh();
       }
     } catch {
-      setError("No se pudo conectar con Apollo.io. Intenta de nuevo.");
+      setError(t.contact.connectionError);
     } finally {
       setLoading(false);
     }
@@ -87,7 +89,7 @@ export function ContactLookup({
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Contacto
+          {t.contact.title}
         </h2>
         {apolloConnected ? (
           <button
@@ -95,11 +97,11 @@ export function ContactLookup({
             disabled={loading}
             className="shrink-0 rounded-xl bg-dolphin-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-dolphin-700 disabled:opacity-60"
           >
-            {loading ? "Buscando..." : hasContact ? "Buscar de nuevo" : "Buscar contacto"}
+            {loading ? t.contact.searching : hasContact ? t.contact.searchAgain : t.contact.searchContact}
           </button>
         ) : (
           <span className="shrink-0 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700">
-            Apollo no conectado
+            {t.contact.apolloNotConnected}
           </span>
         )}
       </div>
@@ -112,7 +114,7 @@ export function ContactLookup({
           <div className="min-w-0 flex-1">
             <p className="font-medium text-ink">{initialContact.name}</p>
             <p className="text-sm text-slate-500">
-              {initialContact.title ?? "Cargo sin especificar"}
+              {initialContact.title ?? t.contact.unspecifiedRole}
             </p>
 
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -129,14 +131,14 @@ export function ContactLookup({
                   className="inline-flex items-center gap-1 rounded-xl border border-slate-200 px-2.5 py-1 text-xs font-medium text-ink hover:bg-slate-50"
                 >
                   <IconLink className="h-3 w-3" />
-                  Ver contacto en Apollo
+                  {t.contact.viewInApollo}
                 </a>
               )}
             </div>
 
             <div className="mt-3 space-y-1 text-sm">
               <p className="text-slate-600">
-                Correo:{" "}
+                {t.contact.emailLabel}{" "}
                 {initialContact.email ? (
                   <a
                     href={`mailto:${initialContact.email}`}
@@ -145,17 +147,15 @@ export function ContactLookup({
                     {initialContact.email}
                   </a>
                 ) : (
-                  <span className="text-slate-400">no disponible</span>
+                  <span className="text-slate-400">{t.contact.notAvailable}</span>
                 )}
               </p>
               <p className="text-slate-600">
-                Teléfono:{" "}
+                {t.contact.phoneLabel}{" "}
                 {initialContact.phone ? (
                   initialContact.phone
                 ) : (
-                  <span className="text-slate-400">
-                    no disponible (Apollo suele no entregarlo en planes básicos)
-                  </span>
+                  <span className="text-slate-400">{t.contact.phoneUnavailable}</span>
                 )}
               </p>
               {initialContact.linkedinUrl && (
@@ -165,31 +165,26 @@ export function ContactLookup({
                   rel="noreferrer"
                   className="inline-block text-dolphin-600 hover:underline"
                 >
-                  Ver LinkedIn ↗
+                  {t.contact.viewLinkedin}
                 </a>
               )}
             </div>
             {initialContact.lookedUpAt && (
               <p className="mt-2 text-xs text-slate-400">
-                Buscado el {new Date(initialContact.lookedUpAt).toLocaleDateString("es-MX")}
+                {t.contact.lookedUpOn(
+                  new Date(initialContact.lookedUpAt).toLocaleDateString(lang === "en" ? "en-US" : "es-MX")
+                )}
               </p>
             )}
           </div>
         </div>
       ) : (
         <p className="mt-2 text-sm text-slate-500">
-          {apolloConnected
-            ? "Aún no se ha buscado un contacto para esta señal. Busca a alguien de RRHH/Talent Acquisition en Apollo.io."
-            : "Conecta Apollo.io en Configuración para poder buscar contactos."}
+          {apolloConnected ? t.contact.noneYetConnected : t.contact.noneYetDisconnected}
         </p>
       )}
 
-      {notFound && (
-        <p className="mt-2 text-sm text-amber-700">
-          No se encontró ningún contacto de RRHH/Talent Acquisition en Apollo.io para esta
-          empresa.
-        </p>
-      )}
+      {notFound && <p className="mt-2 text-sm text-amber-700">{t.contact.notFound}</p>}
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>
   );

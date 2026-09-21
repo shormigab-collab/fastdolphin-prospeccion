@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { updateStatusAction } from "./actions";
 import { IconChevronDown } from "@/components/icons";
-import { statusLabels } from "@/components/Badges";
+import { useLanguage } from "@/components/LanguageProvider";
 import type { SignalStatus } from "@/lib/types";
 
 const STATUSES: SignalStatus[] = [
@@ -23,6 +23,7 @@ export function StatusForm({
   signalId: string;
   status: SignalStatus;
 }) {
+  const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
 
   return (
@@ -39,7 +40,7 @@ export function StatusForm({
       >
         {STATUSES.map((s) => (
           <option key={s} value={s}>
-            {statusLabels[s]}
+            {t.status[s]}
           </option>
         ))}
       </select>

@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { saveCareersUrlAction, confirmVacancyFromJobBoardAction } from "./actions";
 import { IconLink, IconCheck } from "@/components/icons";
+import { useLanguage } from "@/components/LanguageProvider";
 
 interface JobBoardPosting {
   title: string;
@@ -32,6 +33,7 @@ export function JobBoardCheck({
   alreadyConfirmed: boolean;
 }) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
   const [editingUrl, setEditingUrl] = useState(!careersUrl);
   const [urlInput, setUrlInput] = useState(careersUrl ?? "");
@@ -59,7 +61,7 @@ export function JobBoardCheck({
       const body = (await res.json().catch(() => ({}))) as CheckResult;
       setResult(body);
     } catch {
-      setResult({ provider: null, positions: [], matches: [], error: "No se pudo conectar." });
+      setResult({ provider: null, positions: [], matches: [], error: t.jobBoard.noConnection });
     } finally {
       setLoading(false);
     }
@@ -75,14 +77,14 @@ export function JobBoardCheck({
     <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
       <div className="flex items-center justify-between gap-3">
         <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          Bolsa de empleo de la empresa
+          {t.jobBoard.title}
         </h2>
         {careersUrl && !editingUrl && (
           <button
             onClick={() => setEditingUrl(true)}
             className="shrink-0 text-xs font-medium text-slate-400 hover:text-dolphin-600"
           >
-            Cambiar link
+            {t.jobBoard.changeLink}
           </button>
         )}
       </div>
@@ -90,17 +92,17 @@ export function JobBoardCheck({
       {editingUrl ? (
         <div className="mt-3 space-y-2">
           <p className="text-xs text-slate-500">
-            Pega el link de la página de vacantes de la empresa (solo podemos revisarlo
-            automáticamente si usan Greenhouse o Lever — por ejemplo{" "}
-            <code className="text-slate-400">jobs.lever.co/empresa</code> o{" "}
-            <code className="text-slate-400">boards.greenhouse.io/empresa</code>).
+            {t.jobBoard.helpText1}{" "}
+            <code className="text-slate-400">jobs.lever.co/empresa</code> {t.jobBoard.helpTextOr}{" "}
+            <code className="text-slate-400">boards.greenhouse.io/empresa</code>
+            {t.jobBoard.helpTextEnd}
           </p>
           <div className="flex gap-2">
             <input
               type="url"
               value={urlInput}
               onChange={(e) => setUrlInput(e.target.value)}
-              placeholder="https://jobs.lever.co/empresa"
+              placeholder={t.jobBoard.urlPlaceholder}
               className="min-w-0 flex-1 rounded-xl border border-slate-300 px-3 py-2 text-sm focus:border-dolphin-500 focus:outline-none focus:ring-1 focus:ring-dolphin-500"
             />
             <button
@@ -108,7 +110,7 @@ export function JobBoardCheck({
               disabled={isPending || !urlInput.trim()}
               className="shrink-0 rounded-xl bg-dolphin-600 px-3 py-2 text-xs font-semibold text-white hover:bg-dolphin-700 disabled:opacity-60"
             >
-              Guardar
+              {t.jobBoard.save}
             </button>
           </div>
         </div>
@@ -128,7 +130,7 @@ export function JobBoardCheck({
             disabled={loading}
             className="ml-auto shrink-0 rounded-xl bg-dolphin-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-dolphin-700 disabled:opacity-60"
           >
-            {loading ? "Revisando..." : "Buscar vacantes abiertas"}
+            {loading ? t.jobBoard.checking : t.jobBoard.searchOpenPositions}
           </button>
         </div>
       )}
@@ -139,15 +141,14 @@ export function JobBoardCheck({
 
           {!result.error && result.matches.length === 0 && (
             <p className="text-sm text-slate-500">
-              No se encontraron vacantes de {technology} en su bolsa de empleo pública ahora
-              mismo ({result.positions.length} vacante(s) en total, ninguna coincide).
+              {t.jobBoard.noMatches(technology, result.positions.length)}
             </p>
           )}
 
           {result.matches.length > 0 && (
             <div className="space-y-2">
               <p className="text-sm font-medium text-emerald-700">
-                Se encontraron {result.matches.length} vacante(s) que coinciden:
+                {t.jobBoard.matchesFound(result.matches.length)}
               </p>
               {result.matches.map((p) => (
                 <div
@@ -167,7 +168,7 @@ export function JobBoardCheck({
                   </div>
                   {alreadyConfirmed ? (
                     <span className="shrink-0 text-xs font-medium text-emerald-700">
-                      Ya confirmada
+                      {t.jobBoard.alreadyConfirmed}
                     </span>
                   ) : (
                     <button
@@ -176,7 +177,7 @@ export function JobBoardCheck({
                       className="inline-flex shrink-0 items-center gap-1 rounded-xl bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-60"
                     >
                       <IconCheck className="h-3 w-3" />
-                      {confirming === p.url ? "Confirmando..." : "Confirmar con esta vacante"}
+                      {confirming === p.url ? t.jobBoard.confirming : t.jobBoard.confirmWith}
                     </button>
                   )}
                 </div>

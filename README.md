@@ -234,6 +234,38 @@ otro — con un campo nuevo (`origin_label`, agregado también en
 manual normal; el cambio es solo que ya no asume que todo viene de
 LinkedIn.
 
+## Cambiar el idioma de la plataforma (Español / English)
+
+Toda la interfaz se puede usar en español o en inglés. El selector **ES / EN**
+está en la esquina superior del menú lateral (y también en las pantallas de
+inicio, login y registro, antes de entrar). No hace falta ninguna migración
+nueva ni variable de entorno — el idioma se guarda en una cookie del
+navegador (`fd_lang`), no en la cuenta, así que es una preferencia por
+dispositivo, como el modo claro/oscuro.
+
+Cómo funciona por dentro, para quien quiera tocarlo:
+
+- `src/lib/i18n.ts` tiene el diccionario completo (español e inglés) en un
+  solo lugar. Cualquier texto nuevo de interfaz se agrega ahí, como una
+  llave más.
+- Los componentes de servidor (páginas `page.tsx`) leen el idioma con
+  `getLang()` (`src/lib/getLang.ts`, que lee la cookie) y arman sus textos
+  con `getDict(lang)`.
+- Los componentes de cliente (botones, formularios interactivos) usan el
+  hook `useLanguage()` (`src/components/LanguageProvider.tsx`), que expone
+  `t` (el diccionario ya resuelto) y `setLang()` para cambiar de idioma sin
+  recargar la página.
+- El botón de cambio de idioma es `src/components/LanguageSwitcher.tsx`.
+
+**Lo que todavía queda en español, a propósito** (para no comprometer
+calidad por hacerlo a la carrera): el contenido de los borradores de
+mensaje de outreach y el "pitch" de por qué Fast Dolphin es relevante
+(`src/lib/suggestions.ts`) — es contenido de venta, no texto de interfaz,
+y siempre se revisa/edita a mano antes de enviarse, así que se puede
+ajustar directamente ahí si lo necesitan en inglés. Los mensajes de error
+que vienen tal cual de Apollo.io o de las rutas API tampoco se tradujeron
+(muchos son texto dinámico que devuelve el proveedor externo).
+
 ## Pasar de demo a datos reales
 
 - **Apollo.io**: agrega `APOLLO_API_KEY` en las variables de entorno.

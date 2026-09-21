@@ -3,7 +3,7 @@
 import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { IconChevronDown } from "@/components/icons";
-import { statusLabels } from "@/components/Badges";
+import { useLanguage } from "@/components/LanguageProvider";
 import type { SignalStatus, SignalPriority, Technology } from "@/lib/types";
 
 const ALL_STATUSES: SignalStatus[] = [
@@ -28,29 +28,6 @@ const ALL_TECH: Technology[] = [
   "PM/Consultoría",
 ];
 
-const PRIORITY_LABELS: Record<SignalPriority, string> = {
-  alta: "Prioridad alta",
-  media: "Prioridad media",
-  baja: "Prioridad baja",
-};
-
-const STATUS_OPTIONS = [
-  { value: "", label: "Todos los estados" },
-  ...ALL_STATUSES.map((s) => ({ value: s, label: statusLabels[s] })),
-];
-
-const TECH_OPTIONS = [
-  { value: "", label: "Todas las tecnologías" },
-  ...ALL_TECH.map((t) => ({ value: t, label: t })),
-];
-
-const PRIORITY_OPTIONS = [
-  { value: "", label: "Todas las prioridades" },
-  { value: "alta", label: PRIORITY_LABELS.alta },
-  { value: "media", label: PRIORITY_LABELS.media },
-  { value: "baja", label: PRIORITY_LABELS.baja },
-];
-
 export interface LeadsFilterValues {
   status?: string;
   technology?: string;
@@ -61,7 +38,23 @@ export interface LeadsFilterValues {
 
 export function LeadsFilters({ current }: { current: LeadsFilterValues }) {
   const router = useRouter();
+  const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
+
+  const statusOptions = [
+    { value: "", label: t.leads.allStatuses },
+    ...ALL_STATUSES.map((s) => ({ value: s, label: t.status[s] })),
+  ];
+  const techOptions = [
+    { value: "", label: t.leads.allTechnologies },
+    ...ALL_TECH.map((tech) => ({ value: tech, label: tech })),
+  ];
+  const priorityOptions = [
+    { value: "", label: t.leads.allPriorities },
+    { value: "alta", label: t.leads.priorityHigh },
+    { value: "media", label: t.leads.priorityMedium },
+    { value: "baja", label: t.leads.priorityLow },
+  ];
 
   function updateParam(key: "status" | "technology" | "priority", value: string) {
     const merged = { ...current, [key]: value || undefined };
@@ -81,23 +74,23 @@ export function LeadsFilters({ current }: { current: LeadsFilterValues }) {
   return (
     <div className="flex flex-wrap gap-2">
       <FilterSelect
-        label="Estado"
+        label={t.leads.filterStatus}
         value={current.status ?? ""}
-        options={STATUS_OPTIONS}
+        options={statusOptions}
         disabled={isPending}
         onChange={(v) => updateParam("status", v)}
       />
       <FilterSelect
-        label="Tecnología"
+        label={t.leads.filterTechnology}
         value={current.technology ?? ""}
-        options={TECH_OPTIONS}
+        options={techOptions}
         disabled={isPending}
         onChange={(v) => updateParam("technology", v)}
       />
       <FilterSelect
-        label="Prioridad"
+        label={t.leads.filterPriority}
         value={current.priority ?? ""}
-        options={PRIORITY_OPTIONS}
+        options={priorityOptions}
         disabled={isPending}
         onChange={(v) => updateParam("priority", v)}
       />

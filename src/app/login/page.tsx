@@ -6,6 +6,7 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { AuthCard } from "@/components/AuthCard";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const GOOGLE_LOGIN_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED === "true";
 const ALLOWED_DOMAINS = (
@@ -17,11 +18,12 @@ const ALLOWED_DOMAINS = (
 export default function LoginPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { t } = useLanguage();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(
     searchParams.get("error") === "AccessDenied"
-      ? `Solo se puede entrar con un correo de ${ALLOWED_DOMAINS.join(", ")}.`
+      ? `${t.auth.accessDeniedPrefix}${ALLOWED_DOMAINS.join(", ")}.`
       : null
   );
   const [loading, setLoading] = useState(false);
@@ -40,7 +42,7 @@ export default function LoginPage() {
     setLoading(false);
 
     if (!result || result.error) {
-      setError("Correo o contraseña incorrectos.");
+      setError(t.auth.wrongCreds);
       return;
     }
 
@@ -49,23 +51,20 @@ export default function LoginPage() {
   }
 
   return (
-    <AuthCard
-      title="Inicia sesión"
-      subtitle="Usa tu cuenta del equipo de Fast Dolphin."
-    >
+    <AuthCard title={t.auth.loginTitle} subtitle={t.auth.loginSubtitle}>
       {GOOGLE_LOGIN_ENABLED && (
         <>
-          <GoogleSignInButton />
+          <GoogleSignInButton label={t.auth.googleContinue} />
           <div className="my-4 flex items-center gap-3 text-xs text-slate-400">
             <div className="h-px flex-1 bg-slate-200" />
-            o con tu correo
+            {t.auth.orEmail}
             <div className="h-px flex-1 bg-slate-200" />
           </div>
         </>
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="text-sm font-medium text-slate-700">Correo</label>
+          <label className="text-sm font-medium text-slate-700">{t.auth.email}</label>
           <input
             type="email"
             required
@@ -76,7 +75,7 @@ export default function LoginPage() {
           />
         </div>
         <div>
-          <label className="text-sm font-medium text-slate-700">Contraseña</label>
+          <label className="text-sm font-medium text-slate-700">{t.auth.password}</label>
           <input
             type="password"
             required
@@ -91,13 +90,13 @@ export default function LoginPage() {
           disabled={loading}
           className="w-full rounded-xl bg-dolphin-600 px-4 py-2 text-sm font-semibold text-white hover:bg-dolphin-700 disabled:opacity-60"
         >
-          {loading ? "Entrando..." : "Entrar"}
+          {loading ? t.auth.entering : t.auth.enter}
         </button>
       </form>
       <p className="mt-4 text-center text-sm text-slate-500">
-        ¿No tienes cuenta?{" "}
+        {t.auth.noAccount}{" "}
         <Link href="/signup" className="font-medium text-dolphin-600">
-          Créala aquí
+          {t.auth.createHere}
         </Link>
       </p>
     </AuthCard>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import { signIn } from "next-auth/react";
 import { AuthCard } from "@/components/AuthCard";
 import { GoogleSignInButton } from "@/components/GoogleSignInButton";
+import { useLanguage } from "@/components/LanguageProvider";
 
 const GOOGLE_LOGIN_ENABLED = process.env.NEXT_PUBLIC_GOOGLE_LOGIN_ENABLED === "true";
 const ALLOWED_DOMAINS = (
@@ -21,6 +22,7 @@ function isAllowedEmail(email: string) {
 
 export default function SignupPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -35,9 +37,7 @@ export default function SignupPage() {
     // (la que no se puede saltar) vive en /api/register, que rechaza el
     // registro si el dominio no está en la tabla allowed_domains.
     if (!isAllowedEmail(email)) {
-      setError(
-        `Solo se pueden crear cuentas con correo de ${ALLOWED_DOMAINS.join(", ")}.`
-      );
+      setError(`${t.auth.domainOnlyPrefix}${ALLOWED_DOMAINS.join(", ")}.`);
       return;
     }
 
@@ -52,7 +52,7 @@ export default function SignupPage() {
     if (!res.ok) {
       const body = await res.json().catch(() => ({}));
       setLoading(false);
-      setError(body.error ?? "No se pudo crear la cuenta.");
+      setError(body.error ?? t.auth.couldNotCreate);
       return;
     }
 
@@ -60,7 +60,7 @@ export default function SignupPage() {
     setLoading(false);
 
     if (!result || result.error) {
-      setError("Cuenta creada, pero no se pudo iniciar sesión automáticamente. Intenta iniciar sesión.");
+      setError(t.auth.createdButLoginFailed);
       return;
     }
 
@@ -70,22 +70,22 @@ export default function SignupPage() {
 
   return (
     <AuthCard
-      title="Crea tu cuenta"
-      subtitle={`Solo disponible para correos de ${ALLOWED_DOMAINS.join(", ")}.`}
+      title={t.auth.signupTitle}
+      subtitle={`${t.auth.signupSubtitlePrefix}${ALLOWED_DOMAINS.join(", ")}.`}
     >
       {GOOGLE_LOGIN_ENABLED && (
         <>
-          <GoogleSignInButton label="Crear cuenta con Google" />
+          <GoogleSignInButton label={t.auth.googleCreate} />
           <div className="my-4 flex items-center gap-3 text-xs text-slate-400">
             <div className="h-px flex-1 bg-slate-200" />
-            o con tu correo
+            {t.auth.orEmail}
             <div className="h-px flex-1 bg-slate-200" />
           </div>
         </>
       )}
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="text-sm font-medium text-slate-700">Nombre completo</label>
+          <label className="text-sm font-medium text-slate-700">{t.auth.fullName}</label>
           <input
             required
             value={fullName}
@@ -94,7 +94,7 @@ export default function SignupPage() {
           />
         </div>
         <div>
-          <label className="text-sm font-medium text-slate-700">Correo de Fast Dolphin</label>
+          <label className="text-sm font-medium text-slate-700">{t.auth.fdEmail}</label>
           <input
             type="email"
             required
@@ -105,7 +105,7 @@ export default function SignupPage() {
           />
         </div>
         <div>
-          <label className="text-sm font-medium text-slate-700">Contraseña</label>
+          <label className="text-sm font-medium text-slate-700">{t.auth.password}</label>
           <input
             type="password"
             required
@@ -121,13 +121,13 @@ export default function SignupPage() {
           disabled={loading}
           className="w-full rounded-xl bg-dolphin-600 px-4 py-2 text-sm font-semibold text-white hover:bg-dolphin-700 disabled:opacity-60"
         >
-          {loading ? "Creando cuenta..." : "Crear cuenta"}
+          {loading ? t.auth.creatingAccount : t.auth.createAccount}
         </button>
       </form>
       <p className="mt-4 text-center text-sm text-slate-500">
-        ¿Ya tienes cuenta?{" "}
+        {t.auth.alreadyHaveAccount}{" "}
         <Link href="/login" className="font-medium text-dolphin-600">
-          Inicia sesión
+          {t.auth.loginHere}
         </Link>
       </p>
     </AuthCard>

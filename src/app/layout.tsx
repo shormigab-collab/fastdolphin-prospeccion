@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import { Providers } from "./providers";
+import { getLang } from "@/lib/getLang";
 
 // Evita que Next.js intente pre-generar páginas en tiempo de build (incluida
 // la de "no encontrado"). El SessionProvider de NextAuth necesita saber la
@@ -21,8 +22,10 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const lang = getLang();
+
   return (
-    <html lang="es">
+    <html lang={lang}>
       <head>
         {/*
           Inter cargada como hoja de estilo normal (no con next/font/google)
@@ -40,7 +43,7 @@ export default function RootLayout({
         />
       </head>
       <body className="font-sans">
-        <Providers>{children}</Providers>
+        <Providers initialLang={lang}>{children}</Providers>
       </body>
     </html>
   );

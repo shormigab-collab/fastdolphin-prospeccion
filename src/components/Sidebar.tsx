@@ -6,17 +6,20 @@ import { signOut } from "next-auth/react";
 import clsx from "clsx";
 import { Logo } from "@/components/Logo";
 import { IconHome, IconList, IconUpload, IconSettings } from "@/components/icons";
-
-const links = [
-  { href: "/dashboard", label: "Resumen", icon: IconHome },
-  { href: "/leads", label: "Señales / Leads", icon: IconList },
-  { href: "/leads/new", label: "Cargar vacante manual", icon: IconUpload },
-  { href: "/settings", label: "Configuración", icon: IconSettings },
-];
+import { useLanguage } from "@/components/LanguageProvider";
+import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
 export function Sidebar({ email, fullName }: { email: string; fullName?: string | null }) {
   const pathname = usePathname();
   const router = useRouter();
+  const { t } = useLanguage();
+
+  const links = [
+    { href: "/dashboard", label: t.nav.resumen, icon: IconHome },
+    { href: "/leads", label: t.nav.señales, icon: IconList },
+    { href: "/leads/new", label: t.nav.cargar, icon: IconUpload },
+    { href: "/settings", label: t.nav.config, icon: IconSettings },
+  ];
 
   async function handleLogout() {
     await signOut({ redirect: false });
@@ -35,11 +38,14 @@ export function Sidebar({ email, fullName }: { email: string; fullName?: string 
     <aside className="flex h-screen w-64 shrink-0 flex-col justify-between border-r border-slate-200 bg-white">
       <div>
         <div className="border-b border-slate-200 px-5 py-5">
-          <Logo className="h-6 w-auto" />
-          <div className="mt-1 text-xs font-medium text-slate-400">Prospección</div>
+          <div className="flex items-center justify-between gap-2">
+            <Logo className="h-6 w-auto" />
+            <LanguageSwitcher />
+          </div>
+          <div className="mt-1 text-xs font-medium text-slate-400">{t.nav.tagline}</div>
         </div>
         <div className="px-5 pt-5 text-[11px] font-semibold uppercase tracking-widest text-slate-400">
-          Prospección
+          {t.nav.tagline}
         </div>
         <nav className="mt-2 flex flex-col gap-1 px-3">
           {links.map((link) => {
@@ -77,7 +83,7 @@ export function Sidebar({ email, fullName }: { email: string; fullName?: string 
           onClick={handleLogout}
           className="mt-3 text-xs font-medium text-slate-500 hover:text-ink"
         >
-          Cerrar sesión
+          {t.nav.logout}
         </button>
       </div>
     </aside>

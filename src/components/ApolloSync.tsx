@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useLanguage } from "@/components/LanguageProvider";
 import type { Technology } from "@/lib/types";
 
 const TECHNOLOGIES: Technology[] = [
@@ -18,6 +19,7 @@ const TECHNOLOGIES: Technology[] = [
 
 export function ApolloSync() {
   const router = useRouter();
+  const { t } = useLanguage();
   const [technology, setTechnology] = useState<Technology>("SAP");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -37,20 +39,16 @@ export function ApolloSync() {
       const body = await res.json().catch(() => ({}));
 
       if (!res.ok) {
-        setError(body.error ?? "No se pudo sincronizar con Apollo.io.");
+        setError(body.error ?? t.apolloSync.genericError);
       } else if (body.total === 0) {
-        setResult(
-          "Apollo no devolvió más empresas nuevas para esta tecnología por ahora — ya se recorrió lo que su plan expone. Vuelve a intentar más adelante."
-        );
+        setResult(t.apolloSync.noMore);
         router.refresh();
       } else {
-        setResult(
-          `Listo: ${body.created} señal(es) nueva(s), ${body.skipped} ya existían (de ${body.total} empresas encontradas).`
-        );
+        setResult(t.apolloSync.done(body.created, body.skipped, body.total));
         router.refresh();
       }
     } catch {
-      setError("No se pudo conectar con Apollo.io. Intenta de nuevo.");
+      setError(t.apolloSync.connectionError);
     } finally {
       setLoading(false);
     }
@@ -64,9 +62,9 @@ export function ApolloSync() {
           onChange={(e) => setTechnology(e.target.value as Technology)}
           className="rounded-xl border border-slate-300 px-2 py-1.5 text-sm focus:border-dolphin-500 focus:outline-none focus:ring-1 focus:ring-dolphin-500"
         >
-          {TECHNOLOGIES.map((t) => (
-            <option key={t} value={t}>
-              {t}
+          {TECHNOLOGIES.map((tech) => (
+            <option key={tech} value={tech}>
+              {tech}
             </option>
           ))}
         </select>
@@ -75,14 +73,10 @@ export function ApolloSync() {
           disabled={loading}
           className="rounded-xl bg-dolphin-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-dolphin-700 disabled:opacity-60"
         >
-          {loading ? "Sincronizando..." : "Sincronizar ahora"}
+          {loading ? t.apolloSync.syncing : t.apolloSync.syncNow}
         </button>
       </div>
-      <p className="mt-2 text-xs text-slate-500">
-        Busca empresas en Apollo.io cuyo perfil coincide con esta tecnología y crea señales
-        nuevas (sin duplicar las que ya existen). Cada vez que sincronizas avanza más
-        adentro de los resultados de Apollo, para traer empresas distintas a las anteriores.
-      </p>
+      <p className="mt-2 text-xs text-slate-500">{t.apolloSync.help}</p>
       {result && <p className="mt-2 text-sm text-emerald-700">{result}</p>}
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>

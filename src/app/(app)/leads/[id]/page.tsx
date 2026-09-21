@@ -6,6 +6,8 @@ import { suggestionsForSignal } from "@/lib/suggestions";
 import { isApolloConnected } from "@/lib/apollo";
 import { ContactLookup } from "@/components/ContactLookup";
 import { IconLink } from "@/components/icons";
+import { getDict } from "@/lib/i18n";
+import { getLang } from "@/lib/getLang";
 import { StatusForm } from "./StatusForm";
 import { MessagePanel } from "./MessagePanel";
 import { NotesForm } from "./NotesForm";
@@ -17,6 +19,9 @@ export default async function LeadDetailPage({
 }: {
   params: { id: string };
 }) {
+  const lang = getLang();
+  const t = getDict(lang);
+
   const signal = await getSignalById(params.id);
   if (!signal) notFound();
 
@@ -26,7 +31,7 @@ export default async function LeadDetailPage({
   ]);
 
   const pitch = suggestionsForSignal(signal);
-  const detectedAt = new Date(signal.detected_at).toLocaleDateString("es-MX", {
+  const detectedAt = new Date(signal.detected_at).toLocaleDateString(lang === "en" ? "en-US" : "es-MX", {
     day: "2-digit",
     month: "short",
     year: "numeric",
@@ -35,21 +40,22 @@ export default async function LeadDetailPage({
   return (
     <div className="mx-auto max-w-5xl px-8 py-10">
       <p className="text-xs font-medium text-slate-400">
-        Señales / Leads / {signal.company?.name ?? "Detalle"}
+        {t.leadDetail.breadcrumbPrefix}
+        {signal.company?.name ?? t.leadDetail.detailFallback}
       </p>
       <Link href="/leads" className="mt-1 inline-block text-sm text-dolphin-600 hover:underline">
-        ← Volver a señales
+        {t.leadDetail.back}
       </Link>
 
       <div className="mt-3 flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-ink">{signal.company?.name ?? signal.title}</h1>
           <p className="mt-1 text-sm text-slate-500">
-            {signal.company?.industry ?? "Industria sin especificar"}
+            {signal.company?.industry ?? t.leadDetail.unspecifiedIndustry}
             {signal.location ? ` · ${signal.location}` : ""}
           </p>
           <div className="mt-3 flex flex-wrap gap-2">
-            <PriorityBadge priority={signal.priority} />
+            <PriorityBadge priority={signal.priority} lang={lang} />
             <TechBadge technology={signal.technology} />
           </div>
         </div>
@@ -63,31 +69,31 @@ export default async function LeadDetailPage({
         <div className="space-y-6 lg:col-span-3">
           <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-card">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-              Señal de contratación
+              {t.leadDetail.hiringSignal}
             </h2>
             <p className="mt-2 text-base font-semibold text-ink">{signal.title}</p>
 
             <dl className="mt-4 grid grid-cols-2 gap-4 border-t border-slate-100 pt-4 sm:grid-cols-4">
               <div>
-                <dt className="text-xs text-slate-400">Tecnología</dt>
+                <dt className="text-xs text-slate-400">{t.leadDetail.technology}</dt>
                 <dd className="mt-1"><TechBadge technology={signal.technology} /></dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-400">Modalidad</dt>
+                <dt className="text-xs text-slate-400">{t.leadDetail.workMode}</dt>
                 <dd className="mt-1">
-                  <WorkModeBadge workMode={signal.work_mode} location={signal.location} />
+                  <WorkModeBadge workMode={signal.work_mode} location={signal.location} lang={lang} />
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-400">Fuente</dt>
+                <dt className="text-xs text-slate-400">{t.leadDetail.source}</dt>
                 <dd className="mt-1 flex items-center gap-1.5">
-                  <SourceBadge source={signal.source} originLabel={signal.origin_label} />
+                  <SourceBadge source={signal.source} originLabel={signal.origin_label} lang={lang} />
                   {signal.source_url && (
                     <a
                       href={signal.source_url}
                       target="_blank"
                       rel="noreferrer"
-                      title="Ver publicación original en LinkedIn"
+                      title={t.leadDetail.viewOriginalLinkedin}
                       className="text-slate-400 hover:text-dolphin-600"
                     >
                       <IconLink className="h-3.5 w-3.5" />
@@ -96,24 +102,24 @@ export default async function LeadDetailPage({
                 </dd>
               </div>
               <div>
-                <dt className="text-xs text-slate-400">Fecha de detección</dt>
+                <dt className="text-xs text-slate-400">{t.leadDetail.detectedDate}</dt>
                 <dd className="mt-1 text-sm font-medium text-ink">{detectedAt}</dd>
               </div>
             </dl>
 
             <div className="mt-4 border-t border-slate-100 pt-4">
               <h3 className="text-xs font-semibold uppercase tracking-wide text-slate-400">
-                Descripción
+                {t.leadDetail.description}
               </h3>
               <p className="mt-1.5 text-sm text-slate-600">
-                {signal.raw_text || "Sin descripción adicional para esta señal."}
+                {signal.raw_text || t.leadDetail.noDescription}
               </p>
             </div>
           </div>
 
           <div className="rounded-2xl border border-dolphin-100 bg-dolphin-50 p-5">
             <h2 className="text-sm font-semibold uppercase tracking-wide text-dolphin-700">
-              Por qué es relevante
+              {t.leadDetail.whyRelevant}
             </h2>
             <p className="mt-2 text-sm font-medium text-slate-800">{pitch.servicio}</p>
             <ul className="mt-2 list-inside list-disc space-y-1 text-sm text-slate-700">

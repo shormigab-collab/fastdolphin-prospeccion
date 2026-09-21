@@ -273,6 +273,15 @@ export async function updateSignalStatus(signalId: string, status: SignalStatus)
   await sql`update signals set status = ${status} where id = ${signalId}`;
 }
 
+// Borra la señal por completo. Sus mensajes y notas se borran solos en
+// cascada (ver "on delete cascade" en db/0001_init.sql) — no hace falta
+// borrarlos aparte. Es una acción destructiva sin deshacer, por eso la
+// confirmación real vive en el cliente (DeleteSignalButton) antes de
+// llamar a esto.
+export async function deleteSignal(signalId: string) {
+  await sql`delete from signals where id = ${signalId}`;
+}
+
 export async function insertMessageDraft(params: {
   signalId: string;
   draftText: string;

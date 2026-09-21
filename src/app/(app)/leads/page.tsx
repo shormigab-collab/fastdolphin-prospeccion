@@ -4,6 +4,7 @@ import { StatusBadge, TechBadge, PriorityBadge, SourceBadge, WorkModeBadge } fro
 import { matchesLocationPolicy } from "@/lib/policy";
 import { IconSearch, IconCheck } from "@/components/icons";
 import { LeadsFilters } from "./LeadsFilters";
+import { DeleteSignalButton } from "./DeleteSignalButton";
 import { getDict } from "@/lib/i18n";
 import { getLang } from "@/lib/getLang";
 import type { SignalStatus, SignalPriority, Technology } from "@/lib/types";
@@ -147,6 +148,9 @@ export default async function LeadsPage({
               <th className="px-4 py-3">{t.leads.colWorkMode}</th>
               <th className="px-4 py-3">{t.leads.colPriority}</th>
               <th className="px-4 py-3">{t.leads.colStatus}</th>
+              <th className="px-4 py-3">
+                <span className="sr-only">{t.leads.colActions}</span>
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
@@ -184,11 +188,14 @@ export default async function LeadsPage({
                 <td className="px-4 py-3">
                   <StatusBadge status={s.status} lang={lang} />
                 </td>
+                <td className="px-4 py-3 text-right">
+                  <DeleteSignalButton signalId={s.id} title={s.title} />
+                </td>
               </tr>
             ))}
             {signals.length === 0 && (
               <tr>
-                <td colSpan={7} className="px-4 py-8 text-center text-slate-500">
+                <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
                   {t.leads.noSignalsFilters}
                 </td>
               </tr>

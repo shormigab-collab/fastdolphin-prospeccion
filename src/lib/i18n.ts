@@ -153,6 +153,10 @@ export const dict = {
       colWorkMode: "Modalidad",
       colPriority: "Prioridad",
       colStatus: "Estado",
+      colActions: "Acciones",
+      deleteAction: "Eliminar",
+      deleteConfirm: (title: string) =>
+        `¿Seguro que quieres eliminar "${title}"? Se borra junto con sus mensajes y notas — no se puede deshacer.`,
       noSignalsFilters: "No hay señales con estos filtros.",
       confirmedTitle: "Vacante confirmada",
       filterStatus: "Estado",
@@ -505,6 +509,10 @@ export const dict = {
       colWorkMode: "Work mode",
       colPriority: "Priority",
       colStatus: "Status",
+      colActions: "Actions",
+      deleteAction: "Delete",
+      deleteConfirm: (title: string) =>
+        `Delete "${title}"? This also removes its messages and notes — this can't be undone.`,
       noSignalsFilters: "No signals with these filters.",
       confirmedTitle: "Confirmed vacancy",
       filterStatus: "Status",

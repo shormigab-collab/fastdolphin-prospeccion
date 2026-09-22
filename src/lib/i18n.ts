@@ -361,7 +361,7 @@ export const dict = {
     source: {
       apollo: "Apollo.io",
       manual: "Cargado manual",
-      linkedin_import: "Carga manual",
+      linkedin_import: "Importado de LinkedIn",
       adzuna: "Adzuna",
     },
     workMode: {
@@ -721,7 +721,7 @@ export const dict = {
     source: {
       apollo: "Apollo.io",
       manual: "Manually loaded",
-      linkedin_import: "Manually loaded",
+      linkedin_import: "Imported from LinkedIn",
       adzuna: "Adzuna",
     },
     workMode: {

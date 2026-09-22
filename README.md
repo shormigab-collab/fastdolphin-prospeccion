@@ -274,6 +274,48 @@ Limitaciones honestas:
   el correo automático sigue disparándose solo al confirmar una vacante
   individual a mano.
 
+## Más vacantes reales, sin necesidad de cuenta (RemoteOK y Remotive)
+
+Además de Adzuna, la plataforma también sincroniza con
+[RemoteOK](https://remoteok.com) y [Remotive](https://remotive.com), dos
+bolsas de empleo enfocadas 100% en trabajo remoto. La diferencia frente a
+Adzuna: **ninguna de las dos requiere registrarse ni generar API keys** —
+sus APIs son públicas y gratis, así que ambas tarjetas en Configuración
+(`/settings`) aparecen siempre como "Conectado", sin ningún paso previo.
+
+Cómo se usa: igual que Adzuna — en Configuración, elige tecnología y dale a
+"Sincronizar ahora" en la tarjeta de RemoteOK o Remotive. Cada vacante
+encontrada ya trae el link directo a la publicación real, así que las
+señales entran **ya confirmadas** (prioridad alta), igual que las de
+Adzuna.
+
+Para activarlo:
+
+1. Corre `db/0010_remoteok_remotive.sql` en el SQL Editor de Neon (agrega
+   `'remoteok'` y `'remotive'` como fuentes válidas de señal). Es el único
+   paso necesario — no hay variables de entorno que configurar.
+
+Limitaciones honestas:
+
+- Ambas son bolsas exclusivamente remotas, así que no hace falta ninguna
+  heurística de modalidad como con Adzuna — toda señal creada por
+  RemoteOK o Remotive se guarda directamente como `Remoto`.
+- RemoteOK no tiene búsqueda por página: cada sincronización descarga el
+  feed completo vigente y lo filtra por tecnología, así que con el tiempo
+  puede empezar a devolver menos vacantes nuevas (todas ya sincronizadas
+  antes) hasta que RemoteOK publique más.
+- Remotive sugiere (en su propia documentación) un máximo de ~4 consultas
+  diarias por buen uso — la app no lo fuerza por software, así que basta
+  con usar el botón "Sincronizar ahora" con moderación (a mano, no en un
+  loop automático) para respetarlo.
+- Igual que con Adzuna y Apollo, ninguna sincronización manda correo
+  automático al equipo aunque cree señales de prioridad alta — el correo
+  automático sigue disparándose solo al confirmar una vacante individual a
+  mano.
+- Tanto RemoteOK como Remotive piden dar crédito/enlazar la publicación
+  original al mostrar sus vacantes — se cumple automáticamente porque cada
+  señal guarda el link directo (`source_url`) a la publicación real.
+
 ## Cargar vacantes de cualquier fuente, no solo LinkedIn
 
 `/leads/new` (antes "Cargar de LinkedIn") ahora deja elegir de dónde salió

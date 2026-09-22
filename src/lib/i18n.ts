@@ -320,6 +320,10 @@ export const dict = {
       adzunaConnected: "Conectado — puedes sincronizar vacantes reales por tecnología.",
       adzunaNotConnected:
         "No conectada todavía. Adzuna encuentra vacantes reales publicadas hoy (no solo perfiles de empresa que coinciden con la tecnología).",
+      remoteOkConnected:
+        "Conectado — sin necesidad de clave ni configuración. Busca vacantes 100% remotas publicadas en RemoteOK.",
+      remotiveConnected:
+        "Conectado — sin necesidad de clave ni configuración. Busca vacantes 100% remotas publicadas en Remotive.",
       teamAccess: "Equipo con acceso",
       noUsersYet: "Aún no hay usuarios registrados.",
       domainNotePrefix: "Solo se pueden crear cuentas con correo del dominio configurado en",
@@ -349,6 +353,28 @@ export const dict = {
       done: (created: number, skipped: number, total: number) =>
         `Listo: ${created} señal(es) nueva(s), ${skipped} ya existían (de ${total} vacantes encontradas).`,
     },
+    remoteOkSync: {
+      syncing: "Sincronizando...",
+      syncNow: "Sincronizar ahora",
+      help: "Busca vacantes reales publicadas en RemoteOK que mencionan esta tecnología (todas remotas) y crea señales nuevas ya confirmadas, con link directo a la publicación. No necesita ninguna clave ni configuración.",
+      genericError: "No se pudo sincronizar con RemoteOK.",
+      connectionError: "No se pudo conectar con RemoteOK. Intenta de nuevo.",
+      noMore:
+        "RemoteOK no tiene vacantes nuevas para esta tecnología por ahora. Vuelve a intentar más adelante.",
+      done: (created: number, skipped: number, total: number) =>
+        `Listo: ${created} señal(es) nueva(s), ${skipped} ya existían (de ${total} vacantes encontradas).`,
+    },
+    remotiveSync: {
+      syncing: "Sincronizando...",
+      syncNow: "Sincronizar ahora",
+      help: "Busca vacantes reales publicadas en Remotive que mencionan esta tecnología (todas remotas) y crea señales nuevas ya confirmadas, con link directo a la publicación. No necesita ninguna clave ni configuración. Remotive sugiere no sincronizar más de unas pocas veces al día.",
+      genericError: "No se pudo sincronizar con Remotive.",
+      connectionError: "No se pudo conectar con Remotive. Intenta de nuevo.",
+      noMore:
+        "Remotive no tiene vacantes nuevas para esta tecnología por ahora. Vuelve a intentar más adelante.",
+      done: (created: number, skipped: number, total: number) =>
+        `Listo: ${created} señal(es) nueva(s), ${skipped} ya existían (de ${total} vacantes encontradas).`,
+    },
     status: {
       nuevo: "Nuevo",
       calificando: "Calificando",
@@ -363,6 +389,8 @@ export const dict = {
       manual: "Cargado manual",
       linkedin_import: "Importado de LinkedIn",
       adzuna: "Adzuna",
+      remoteok: "RemoteOK",
+      remotive: "Remotive",
     },
     workMode: {
       remoto: "Remoto",
@@ -680,6 +708,10 @@ export const dict = {
       adzunaConnected: "Connected — you can sync real job postings by technology.",
       adzunaNotConnected:
         "Not connected yet. Adzuna finds real job postings published today (not just company profiles that match the technology).",
+      remoteOkConnected:
+        "Connected — no key or setup required. Searches 100% remote job postings on RemoteOK.",
+      remotiveConnected:
+        "Connected — no key or setup required. Searches 100% remote job postings on Remotive.",
       teamAccess: "Team with access",
       noUsersYet: "No users registered yet.",
       domainNotePrefix: "Accounts can only be created with an email from the domain set in",
@@ -709,6 +741,26 @@ export const dict = {
       done: (created: number, skipped: number, total: number) =>
         `Done: ${created} new signal(s), ${skipped} already existed (out of ${total} postings found).`,
     },
+    remoteOkSync: {
+      syncing: "Syncing...",
+      syncNow: "Sync now",
+      help: "Searches RemoteOK for real job postings that mention this technology (all remote) and creates new already-confirmed signals, with a direct link to the posting. No key or setup required.",
+      genericError: "Could not sync with RemoteOK.",
+      connectionError: "Could not connect to RemoteOK. Try again.",
+      noMore: "RemoteOK has no new postings for this technology right now. Try again later.",
+      done: (created: number, skipped: number, total: number) =>
+        `Done: ${created} new signal(s), ${skipped} already existed (out of ${total} postings found).`,
+    },
+    remotiveSync: {
+      syncing: "Syncing...",
+      syncNow: "Sync now",
+      help: "Searches Remotive for real job postings that mention this technology (all remote) and creates new already-confirmed signals, with a direct link to the posting. No key or setup required. Remotive suggests syncing no more than a few times a day.",
+      genericError: "Could not sync with Remotive.",
+      connectionError: "Could not connect to Remotive. Try again.",
+      noMore: "Remotive has no new postings for this technology right now. Try again later.",
+      done: (created: number, skipped: number, total: number) =>
+        `Done: ${created} new signal(s), ${skipped} already existed (out of ${total} postings found).`,
+    },
     status: {
       nuevo: "New",
       calificando: "Qualifying",
@@ -723,6 +775,8 @@ export const dict = {
       manual: "Manually loaded",
       linkedin_import: "Imported from LinkedIn",
       adzuna: "Adzuna",
+      remoteok: "RemoteOK",
+      remotive: "Remotive",
     },
     workMode: {
       remoto: "Remote",

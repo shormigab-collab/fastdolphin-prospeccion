@@ -5,9 +5,9 @@ import { ALL_TECHNOLOGIES } from "@/lib/apollo";
 import {
   findOrCreateCompany,
   findSignalBySourceUrl,
-  createAdzunaSignal,
+  createJobFeedSignal,
   insertMessageDraft,
-  countAdzunaSignalsForTechnology,
+  countSignalsForTechnologyBySource,
 } from "@/lib/queries";
 import { generateOutreachDraft } from "@/lib/suggestions";
 import type { Technology } from "@/lib/types";
@@ -43,7 +43,7 @@ export async function POST(request: Request) {
   // para esta tecnología — una aproximación razonable, ya que lo importante
   // es no quedarse pegado en los mismos resultados.
   const PAGE_SIZE = 20;
-  const existingCount = await countAdzunaSignalsForTechnology(technology);
+  const existingCount = await countSignalsForTechnologyBySource(technology, "adzuna");
   const page = Math.floor(existingCount / PAGE_SIZE) + 1;
 
   const { candidates, error } = await fetchAdzunaJobs(technology, country, page, PAGE_SIZE);
@@ -72,7 +72,8 @@ export async function POST(request: Request) {
       name: candidate.companyName,
     });
 
-    const signalId = await createAdzunaSignal({
+    const signalId = await createJobFeedSignal({
+      source: "adzuna",
       companyId,
       title: candidate.title,
       technology: candidate.technology,

@@ -207,23 +207,29 @@ export async function findSignalBySourceUrl(sourceUrl: string) {
   return rows[0]?.id ?? null;
 }
 
-// Igual que countApolloSignalsForTechnology, pero para Adzuna — cuántas
-// señales de Adzuna ya existen para esta tecnología, para calcular qué
+// Igual que countApolloSignalsForTechnology, pero genérica para cualquier
+// fuente de "vacante real" (Adzuna, RemoteOK, Remotive) — cuántas señales
+// de esa fuente ya existen para esta tecnología, para calcular qué
 // "página" de resultados pedir en la próxima sincronización.
-export async function countAdzunaSignalsForTechnology(technology: Technology) {
+export async function countSignalsForTechnologyBySource(
+  technology: Technology,
+  source: SignalSource
+) {
   const rows = (await sql`
     select count(*)::int as count from signals
-    where technology = ${technology} and source = 'adzuna'
+    where technology = ${technology} and source = ${source}
   `) as unknown as { count: number }[];
 
   return rows[0]?.count ?? 0;
 }
 
-// Crea una señal a partir de una vacante real encontrada en Adzuna. A
-// diferencia de Apollo (que solo compara perfil y entra en prioridad
-// media), esto es una vacante publicada de verdad hoy — con link directo a
-// la publicación — así que entra ya confirmada, en prioridad alta.
-export async function createAdzunaSignal(params: {
+// Crea una señal a partir de una vacante real encontrada en una bolsa de
+// empleo externa (Adzuna, RemoteOK, Remotive). A diferencia de Apollo (que
+// solo compara perfil y entra en prioridad media), esto es una vacante
+// publicada de verdad hoy — con link directo a la publicación — así que
+// entra ya confirmada, en prioridad alta.
+export async function createJobFeedSignal(params: {
+  source: SignalSource;
   companyId: string;
   title: string;
   technology: Technology;
@@ -238,7 +244,7 @@ export async function createAdzunaSignal(params: {
     )
     values (
       ${params.companyId}, ${params.title}, ${params.technology}, 'vacante_publicada',
-      'alta', 'adzuna', ${params.sourceUrl}, 'nuevo', ${params.workMode},
+      'alta', ${params.source}, ${params.sourceUrl}, 'nuevo', ${params.workMode},
       ${params.location ?? null}, now()
     )
     returning id

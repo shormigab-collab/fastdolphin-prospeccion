@@ -3,6 +3,8 @@ import { isApolloConnected } from "@/lib/apollo";
 import { isAdzunaConnected } from "@/lib/adzuna";
 import { ApolloSync } from "@/components/ApolloSync";
 import { AdzunaSync } from "@/components/AdzunaSync";
+import { RemoteOkSync } from "@/components/RemoteOkSync";
+import { RemotiveSync } from "@/components/RemotiveSync";
 import { getDict } from "@/lib/i18n";
 import { getLang } from "@/lib/getLang";
 
@@ -75,6 +77,28 @@ export default async function SettingsPage() {
             {t.settings.connectHelpSuffix}
           </p>
         )}
+
+        <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 p-3">
+          <div>
+            <div className="text-sm font-medium text-slate-800">RemoteOK</div>
+            <div className="text-xs text-slate-500">{t.settings.remoteOkConnected}</div>
+          </div>
+          <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+            {t.settings.connected}
+          </span>
+        </div>
+        <RemoteOkSync />
+
+        <div className="mt-4 flex items-center justify-between rounded-xl bg-slate-50 p-3">
+          <div>
+            <div className="text-sm font-medium text-slate-800">Remotive</div>
+            <div className="text-xs text-slate-500">{t.settings.remotiveConnected}</div>
+          </div>
+          <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700">
+            {t.settings.connected}
+          </span>
+        </div>
+        <RemotiveSync />
       </div>
 
       <div className="mt-8 rounded-2xl border border-slate-200 bg-white p-5 shadow-card">

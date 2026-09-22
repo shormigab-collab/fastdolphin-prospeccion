@@ -28,7 +28,14 @@ const ALL_TECH: Technology[] = [
   "PM/Consultoría",
 ];
 
-const ALL_SOURCES: SignalSource[] = ["apollo", "manual", "linkedin_import", "adzuna"];
+const ALL_SOURCES: SignalSource[] = [
+  "apollo",
+  "manual",
+  "linkedin_import",
+  "adzuna",
+  "remoteok",
+  "remotive",
+];
 
 const ALL_WORK_MODES: WorkMode[] = ["remoto", "hibrido", "presencial"];
 

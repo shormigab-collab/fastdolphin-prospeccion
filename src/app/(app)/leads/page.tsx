@@ -7,12 +7,14 @@ import { LeadsFilters } from "./LeadsFilters";
 import { DeleteSignalButton } from "./DeleteSignalButton";
 import { getDict } from "@/lib/i18n";
 import { getLang } from "@/lib/getLang";
-import type { SignalStatus, SignalPriority, Technology } from "@/lib/types";
+import type { SignalStatus, SignalPriority, Technology, SignalSource, WorkMode } from "@/lib/types";
 
 type LeadsSearchParams = {
   status?: string;
   technology?: string;
   priority?: string;
+  source?: string;
+  workMode?: string;
   q?: string;
   all?: string;
 };
@@ -26,6 +28,8 @@ function buildHref(base: LeadsSearchParams, overrides: LeadsSearchParams) {
   if (merged.status) usp.set("status", merged.status);
   if (merged.technology) usp.set("technology", merged.technology);
   if (merged.priority) usp.set("priority", merged.priority);
+  if (merged.source) usp.set("source", merged.source);
+  if (merged.workMode) usp.set("workMode", merged.workMode);
   if (merged.q) usp.set("q", merged.q);
   if (merged.all) usp.set("all", merged.all);
   const s = usp.toString();
@@ -44,6 +48,8 @@ export default async function LeadsPage({
     status: searchParams.status as SignalStatus | undefined,
     technology: searchParams.technology as Technology | undefined,
     priority: searchParams.priority as SignalPriority | undefined,
+    source: searchParams.source as SignalSource | undefined,
+    workMode: searchParams.workMode as WorkMode | undefined,
     q: searchParams.q,
   });
 
@@ -57,6 +63,8 @@ export default async function LeadsPage({
     status: searchParams.status,
     technology: searchParams.technology,
     priority: searchParams.priority,
+    source: searchParams.source,
+    workMode: searchParams.workMode,
     q: searchParams.q,
     all: searchParams.all,
   };
@@ -106,6 +114,8 @@ export default async function LeadsPage({
           <input type="hidden" name="technology" value={searchParams.technology} />
         )}
         {searchParams.priority && <input type="hidden" name="priority" value={searchParams.priority} />}
+        {searchParams.source && <input type="hidden" name="source" value={searchParams.source} />}
+        {searchParams.workMode && <input type="hidden" name="workMode" value={searchParams.workMode} />}
         {searchParams.all && <input type="hidden" name="all" value={searchParams.all} />}
         <div className="relative flex-1 min-w-[220px] max-w-sm">
           <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />

@@ -137,7 +137,7 @@ export default async function DashboardPage({
                       <td className="px-4 py-3 text-right">
                         <Link
                           href={`/leads/${s.id}`}
-                          className="rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-slate-50"
+                          className="inline-block whitespace-nowrap rounded-lg border border-slate-200 px-3 py-1.5 text-xs font-semibold text-ink hover:bg-slate-50"
                         >
                           {t.dashboard.viewDetail}
                         </Link>

@@ -15,6 +15,8 @@ export async function listSignals(filter?: {
   status?: SignalStatus;
   technology?: Technology;
   priority?: SignalPriority;
+  source?: SignalSource;
+  workMode?: WorkMode;
   // Busca por coincidencia parcial en el título de la señal o el nombre de
   // la empresa (case-insensitive) — filtro de texto libre para el buscador.
   q?: string;
@@ -34,6 +36,8 @@ export async function listSignals(filter?: {
     where (${filter?.status ?? null}::text is null or s.status = ${filter?.status ?? null})
       and (${filter?.technology ?? null}::text is null or s.technology = ${filter?.technology ?? null})
       and (${filter?.priority ?? null}::text is null or s.priority = ${filter?.priority ?? null})
+      and (${filter?.source ?? null}::text is null or s.source = ${filter?.source ?? null})
+      and (${filter?.workMode ?? null}::text is null or s.work_mode = ${filter?.workMode ?? null})
       and (
         ${searchTerm}::text is null
         or s.title ilike ${searchTerm}

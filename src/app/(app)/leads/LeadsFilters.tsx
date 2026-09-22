@@ -4,7 +4,7 @@ import { useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { IconChevronDown } from "@/components/icons";
 import { useLanguage } from "@/components/LanguageProvider";
-import type { SignalStatus, SignalPriority, Technology } from "@/lib/types";
+import type { SignalStatus, SignalPriority, Technology, SignalSource, WorkMode } from "@/lib/types";
 
 const ALL_STATUSES: SignalStatus[] = [
   "nuevo",
@@ -28,10 +28,16 @@ const ALL_TECH: Technology[] = [
   "PM/Consultoría",
 ];
 
+const ALL_SOURCES: SignalSource[] = ["apollo", "manual", "linkedin_import", "adzuna"];
+
+const ALL_WORK_MODES: WorkMode[] = ["remoto", "hibrido", "presencial"];
+
 export interface LeadsFilterValues {
   status?: string;
   technology?: string;
   priority?: string;
+  source?: string;
+  workMode?: string;
   q?: string;
   all?: string;
 }
@@ -55,13 +61,26 @@ export function LeadsFilters({ current }: { current: LeadsFilterValues }) {
     { value: "media", label: t.leads.priorityMedium },
     { value: "baja", label: t.leads.priorityLow },
   ];
+  const sourceOptions = [
+    { value: "", label: t.leads.allSources },
+    ...ALL_SOURCES.map((s) => ({ value: s, label: t.source[s] })),
+  ];
+  const workModeOptions = [
+    { value: "", label: t.leads.allWorkModes },
+    ...ALL_WORK_MODES.map((w) => ({ value: w, label: t.workMode[w] })),
+  ];
 
-  function updateParam(key: "status" | "technology" | "priority", value: string) {
+  function updateParam(
+    key: "status" | "technology" | "priority" | "source" | "workMode",
+    value: string
+  ) {
     const merged = { ...current, [key]: value || undefined };
     const usp = new URLSearchParams();
     if (merged.status) usp.set("status", merged.status);
     if (merged.technology) usp.set("technology", merged.technology);
     if (merged.priority) usp.set("priority", merged.priority);
+    if (merged.source) usp.set("source", merged.source);
+    if (merged.workMode) usp.set("workMode", merged.workMode);
     if (merged.q) usp.set("q", merged.q);
     if (merged.all) usp.set("all", merged.all);
     const qs = usp.toString();
@@ -93,6 +112,20 @@ export function LeadsFilters({ current }: { current: LeadsFilterValues }) {
         options={priorityOptions}
         disabled={isPending}
         onChange={(v) => updateParam("priority", v)}
+      />
+      <FilterSelect
+        label={t.leads.filterSource}
+        value={current.source ?? ""}
+        options={sourceOptions}
+        disabled={isPending}
+        onChange={(v) => updateParam("source", v)}
+      />
+      <FilterSelect
+        label={t.leads.filterWorkMode}
+        value={current.workMode ?? ""}
+        options={workModeOptions}
+        disabled={isPending}
+        onChange={(v) => updateParam("workMode", v)}
       />
     </div>
   );

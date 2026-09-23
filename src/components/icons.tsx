@@ -275,3 +275,17 @@ export function IconDots({ className }: { className?: string }) {
     </svg>
   );
 }
+
+export function IconPencil({ className }: { className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" fill="none" className={className} aria-hidden="true">
+      <path
+        d="M15.2 4.6l4.2 4.2M4 20l.9-4.2L16.4 5.2a1.4 1.4 0 0 1 2 0l1.4 1.4a1.4 1.4 0 0 1 0 2L8.2 19.1 4 20Z"
+        stroke="currentColor"
+        strokeWidth="1.6"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  );
+}

@@ -2,7 +2,7 @@ import Link from "next/link";
 import { listRecentActivity, listPendingFollowUps } from "@/lib/queries";
 import { CompanyLogo } from "@/components/CompanyLogo";
 import { IconAlertTriangle, IconCalendar } from "@/components/icons";
-import { formatDate } from "@/lib/time";
+import { formatDate, toDateOnlyString } from "@/lib/time";
 import { ActivityTimeline } from "./ActivityTimeline";
 import { getDict } from "@/lib/i18n";
 import { getLang } from "@/lib/getLang";
@@ -48,7 +48,8 @@ export default async function ActivityPage() {
               </p>
             )}
             {pending.map((s) => {
-              const isOverdue = (s.next_follow_up_at ?? "") < todayISO;
+              const followUpDate = toDateOnlyString(s.next_follow_up_at) ?? "";
+              const isOverdue = followUpDate < todayISO;
               const Icon = isOverdue ? IconAlertTriangle : IconCalendar;
               return (
                 <div
@@ -62,7 +63,7 @@ export default async function ActivityPage() {
                       <Icon className="h-3 w-3 shrink-0" />
                       {s.next_follow_up_note ?? (isOverdue ? t.leads.actionOverdue : t.leads.actionToday)}
                       {" · "}
-                      {formatDate(s.next_follow_up_at!, lang)}
+                      {formatDate(followUpDate, lang)}
                     </p>
                   </div>
                   <Link

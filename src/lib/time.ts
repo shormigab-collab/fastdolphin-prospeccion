@@ -22,12 +22,30 @@ export function timeAgo(iso: string, lang: Lang = "es") {
   return t.monthsAgo(diffMonth);
 }
 
+// Normaliza una columna `date` de Postgres a "YYYY-MM-DD", sin importar si
+// el driver la entregó como string (lo normal con @neondatabase/serverless)
+// o como objeto Date (algunos entornos/versiones lo hacen) — para que el
+// resto del código pueda comparar y formatear fechas de seguimiento sin
+// preocuparse por cuál de los dos llegó. Devuelve null si no hay fecha.
+export function toDateOnlyString(value: string | Date | null | undefined): string | null {
+  if (value == null) return null;
+  if (value instanceof Date) {
+    const y = value.getUTCFullYear();
+    const m = String(value.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(value.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  // Por si algún día llega con hora incluida ("2026-09-25T00:00:00.000Z").
+  return value.slice(0, 10);
+}
+
 // Fecha corta ("12 mar 2025" / "Mar 12, 2025") para mostrar seguimientos
 // programados — recibe una fecha "YYYY-MM-DD" (columna `date` de Postgres,
-// sin hora) y la formatea en el idioma activo, sin desfasarse por huso
-// horario (por eso se arma la Date en UTC explícitamente).
-export function formatDate(isoDate: string, lang: Lang = "es") {
-  const [year, month, day] = isoDate.split("-").map(Number);
+// sin hora) o un objeto Date, y la formatea en el idioma activo, sin
+// desfasarse por huso horario (por eso se arma la Date en UTC explícitamente).
+export function formatDate(isoDate: string | Date, lang: Lang = "es") {
+  const normalized = toDateOnlyString(isoDate) ?? "";
+  const [year, month, day] = normalized.split("-").map(Number);
   const d = new Date(Date.UTC(year, (month ?? 1) - 1, day ?? 1));
   return d.toLocaleDateString(lang === "es" ? "es-ES" : "en-US", {
     day: "numeric",

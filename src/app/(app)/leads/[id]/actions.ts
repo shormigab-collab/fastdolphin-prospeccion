@@ -14,6 +14,7 @@ import {
   addNote as addNoteQuery,
   confirmVacancy,
   updateCompanyCareersUrl,
+  updateSignalContact,
 } from "@/lib/queries";
 import { notifyTeamOfHighPrioritySignal } from "@/lib/email";
 import type { SignalStatus } from "@/lib/types";
@@ -62,6 +63,30 @@ export async function updateStatusAction(signalId: string, status: SignalStatus)
   revalidatePath(`/leads/${signalId}`);
   revalidatePath("/leads");
   revalidatePath("/dashboard");
+}
+
+// Guarda a mano los datos del contacto (nombre, cargo, correo, teléfono,
+// LinkedIn) — el campo que llegue vacío se guarda como null, no como
+// string vacío, para que la interfaz siga tratándolo igual que "sin dato".
+export async function updateContactAction(
+  signalId: string,
+  fields: {
+    name: string;
+    title: string;
+    email: string;
+    phone: string;
+    linkedinUrl: string;
+  }
+) {
+  await updateSignalContact(signalId, {
+    name: fields.name.trim() || null,
+    title: fields.title.trim() || null,
+    email: fields.email.trim() || null,
+    phone: fields.phone.trim() || null,
+    linkedinUrl: fields.linkedinUrl.trim() || null,
+  });
+  revalidatePath(`/leads/${signalId}`);
+  revalidatePath("/leads");
 }
 
 export async function addNoteAction(signalId: string, body: string) {

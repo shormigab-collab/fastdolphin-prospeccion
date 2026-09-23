@@ -78,7 +78,11 @@ export interface Signal {
   created_by: string | null;
   created_at: string;
   updated_at: string;
-  next_follow_up_at: string | null;
+  // El driver de la base de datos normalmente entrega esta columna `date`
+  // como string ("YYYY-MM-DD"), pero en algunos entornos puede llegar como
+  // Date — el código que la usa siempre pasa por toDateOnlyString()
+  // (@/lib/time) para no depender de cuál de las dos sea.
+  next_follow_up_at: string | Date | null;
   next_follow_up_note: string | null;
   company?: Company;
   // Solo viene lleno cuando la consulta hace el join con `users` (listSignals) —

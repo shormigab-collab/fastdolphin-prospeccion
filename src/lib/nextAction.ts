@@ -1,4 +1,5 @@
 import type { CompanyGroup } from "@/lib/groupSignals";
+import { toDateOnlyString } from "@/lib/time";
 
 // Qué le conviene hacer a alguien del equipo con esta oportunidad a
 // continuación. Dos tipos de resultado, y la diferencia importa:
@@ -28,18 +29,22 @@ export function nextActionForGroup(group: CompanyGroup): NextActionInfo {
   const primary = group.signals[0];
 
   // La fecha programada más próxima entre todas las señales del grupo.
+  // Se normaliza a "YYYY-MM-DD" antes de comparar/ordenar por si el driver
+  // de la base de datos entrega la columna `date` como objeto Date en vez
+  // de string (ver toDateOnlyString en @/lib/time).
   const scheduled = group.signals
-    .filter((s) => !!s.next_follow_up_at)
-    .sort((a, b) => (a.next_follow_up_at! < b.next_follow_up_at! ? -1 : 1))[0];
+    .map((s) => ({ signal: s, date: toDateOnlyString(s.next_follow_up_at) }))
+    .filter((x): x is { signal: (typeof group.signals)[number]; date: string } => !!x.date)
+    .sort((a, b) => (a.date < b.date ? -1 : 1))[0];
 
-  if (scheduled?.next_follow_up_at) {
+  if (scheduled) {
     const today = todayISO();
     return {
       kind: "follow_up",
-      date: scheduled.next_follow_up_at,
-      note: scheduled.next_follow_up_note,
-      isOverdue: scheduled.next_follow_up_at < today,
-      isToday: scheduled.next_follow_up_at === today,
+      date: scheduled.date,
+      note: scheduled.signal.next_follow_up_note,
+      isOverdue: scheduled.date < today,
+      isToday: scheduled.date === today,
     };
   }
 

@@ -299,6 +299,33 @@ export async function updateSignalStatus(signalId: string, status: SignalStatus)
   await sql`update signals set status = ${status} where id = ${signalId}`;
 }
 
+// Carga a mano el contacto de una señal (nombre, cargo, correo, teléfono,
+// LinkedIn) — para cuando el equipo lo encuentra por su cuenta en LinkedIn
+// u otra fuente, sin depender de que Apollo lo tenga. No toca
+// `contact_looked_up_at` ni `contact_apollo_id`: esos campos siguen
+// reflejando si (y cuándo) hubo una búsqueda real en Apollo, para no
+// mezclar ambas fuentes.
+export async function updateSignalContact(
+  signalId: string,
+  contact: {
+    name: string | null;
+    title: string | null;
+    email: string | null;
+    phone: string | null;
+    linkedinUrl: string | null;
+  }
+) {
+  await sql`
+    update signals set
+      contact_name = ${contact.name},
+      contact_title = ${contact.title},
+      contact_email = ${contact.email},
+      contact_phone = ${contact.phone},
+      contact_linkedin_url = ${contact.linkedinUrl}
+    where id = ${signalId}
+  `;
+}
+
 // Borra la señal por completo. Sus mensajes y notas se borran solos en
 // cascada (ver "on delete cascade" en db/0001_init.sql) — no hace falta
 // borrarlos aparte. Es una acción destructiva sin deshacer, por eso la

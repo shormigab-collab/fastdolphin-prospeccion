@@ -83,12 +83,12 @@ export function LeadsTable({
                     className="h-4 w-4 rounded border-slate-300 text-dolphin-600 focus:ring-dolphin-500"
                   />
                 </th>
-                <th className="px-4 py-3">{t.leads.colCompanySignal}</th>
-                <th className="px-4 py-3">{t.leads.colTechnology}</th>
-                <th className="px-4 py-3">{t.leads.colResponsible}</th>
-                <th className="px-4 py-3">{t.leads.colStatus}</th>
-                <th className="px-4 py-3">{t.leads.colNextAction}</th>
-                <th className="px-4 py-3">
+                <th className="min-w-[220px] px-4 py-3">{t.leads.colCompanySignal}</th>
+                <th className="min-w-[110px] whitespace-nowrap px-4 py-3">{t.leads.colTechnology}</th>
+                <th className="min-w-[150px] whitespace-nowrap px-4 py-3">{t.leads.colResponsible}</th>
+                <th className="min-w-[120px] whitespace-nowrap px-4 py-3">{t.leads.colStatus}</th>
+                <th className="min-w-[200px] whitespace-nowrap px-4 py-3">{t.leads.colNextAction}</th>
+                <th className="min-w-[120px] px-4 py-3">
                   <span className="sr-only">{t.leads.colActions}</span>
                 </th>
               </tr>
@@ -167,7 +167,7 @@ export function LeadsTable({
                           <button
                             type="button"
                             onClick={() => toggleExpand(group.company.id)}
-                            className="inline-flex items-center gap-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-ink hover:bg-slate-50"
+                            className="inline-flex items-center gap-1 whitespace-nowrap rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-ink hover:bg-slate-50"
                           >
                             {isOpen ? t.leads.collapseSignals : t.leads.expandSignals}
                             <IconChevronRight
@@ -315,7 +315,7 @@ function NextActionCell({ action }: { action: NextActionInfo }) {
   const { t, lang } = useLanguage();
 
   if (action.kind === "none") {
-    return <span className="text-xs text-slate-400">{t.leads.actionNone}</span>;
+    return <span className="whitespace-nowrap text-xs text-slate-400">{t.leads.actionNone}</span>;
   }
 
   if (action.kind === "follow_up") {
@@ -327,11 +327,16 @@ function NextActionCell({ action }: { action: NextActionInfo }) {
         ? t.leads.actionToday
         : formatDate(action.date!, lang);
     return (
-      <div className={"flex items-start gap-1.5 text-xs font-medium " + color}>
+      <div className={"flex max-w-[220px] items-start gap-1.5 text-xs font-medium " + color}>
         <Icon className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-        <div>
-          <div>{action.note ?? t.leads.bulkScheduleFollowUp}</div>
-          <div className="text-[11px] font-normal opacity-80">{dateLine}</div>
+        <div className="min-w-0">
+          <div
+            className="line-clamp-2 leading-snug"
+            title={action.note ?? undefined}
+          >
+            {action.note ?? t.leads.bulkScheduleFollowUp}
+          </div>
+          <div className="mt-0.5 whitespace-nowrap text-[11px] font-normal opacity-80">{dateLine}</div>
         </div>
       </div>
     );
@@ -341,9 +346,9 @@ function NextActionCell({ action }: { action: NextActionInfo }) {
     action.kind === "assign" ? t.leads.actionAssign : action.kind === "find_contact" ? t.leads.actionFindContact : t.leads.actionReview;
 
   return (
-    <div className="text-xs font-medium text-slate-500">
-      <div>{label}</div>
-      <div className="text-[11px] font-normal text-slate-400">{t.leads.actionSuggested}</div>
+    <div className="max-w-[220px] text-xs font-medium text-slate-500">
+      <div className="leading-snug">{label}</div>
+      <div className="mt-0.5 whitespace-nowrap text-[11px] font-normal text-slate-400">{t.leads.actionSuggested}</div>
     </div>
   );
 }

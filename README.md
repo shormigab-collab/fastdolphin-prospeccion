@@ -316,6 +316,63 @@ Limitaciones honestas:
   original al mostrar sus vacantes — se cumple automáticamente porque cada
   señal guarda el link directo (`source_url`) a la publicación real.
 
+## Oportunidades agrupadas por empresa, responsables y seguimientos (⚠️ requiere migración antes de desplegar)
+
+La lista de señales (ahora "Oportunidades" en el menú) se rediseñó siguiendo
+un mockup que armó el equipo: filas agrupadas por empresa (en vez de una
+fila por cada señal suelta), selección con checkboxes y una barra de
+acciones en lote, un responsable asignado por señal, y una "próxima acción"
+por oportunidad. Hay también una página nueva, **Actividad**
+(`/activity`), con la misma actividad reciente del dashboard pero agrupada
+por empresa, más un panel de "Pendientes de hoy".
+
+**Antes de desplegar este cambio, corre `db/0011_follow_up.sql` en el SQL
+Editor de Neon.** A diferencia de RemoteOK/Remotive (que sumaban una fuente
+más a una lista existente), esta vez el código nuevo consulta columnas que
+no existen hasta correr la migración (`next_follow_up_at`,
+`next_follow_up_note`) — si el código se despliega antes de correrla, tanto
+`/leads` como `/activity` van a fallar con un error de base de datos hasta
+que se corra. Es el mismo tipo de problema que ya vivimos con la migración
+de RemoteOK/Remotive — esta vez, para evitarlo, corre la migración primero
+y confirma que el proyecto de Neon es el correcto (el que está conectado
+de verdad a Vercel) antes de desplegar el código.
+
+Qué es real y qué es sugerido, para ser honestos con los datos:
+
+- **"Próxima acción" con fecha** (ícono de calendario, o de alerta si está
+  vencida) es 100% real: alguien la programó a propósito con el botón
+  "Programar seguimiento" de la barra de selección, guardada en
+  `next_follow_up_at`/`next_follow_up_note`. Nunca se inventa una fecha —
+  antes de este cambio la plataforma no tenía forma de guardar esto.
+- **"Asignar responsable" / "Buscar contacto" / "Revisar señales"** (sin
+  fecha, con la etiqueta "Sugerido") son sugerencias que la plataforma
+  infiere de datos reales — que nadie esté asignado, que no se haya
+  encontrado contacto, o que la señal siga en "Nuevo" — nunca de una
+  fecha u hora fabricada. Ver `src/lib/nextAction.ts`.
+- El panel "Pendientes de hoy" de Actividad solo muestra seguimientos
+  programados de verdad (vencidos o de hoy) — nunca las sugerencias de
+  arriba, para no mezclar "esto hay que hacerlo hoy sí o sí" con "esto
+  convendría revisar".
+
+Otros detalles:
+
+- "Responsable" usa la columna `assigned_to` (ya existía en el esquema
+  desde el principio, pero no se usaba en ningún lado de la interfaz hasta
+  ahora) — se asigna solo en lote, seleccionando una o más empresas y
+  usando "Asignar responsable" en la barra de abajo.
+- Dentro de cada fila de empresa con más de una señal, "Ver señales"
+  despliega el detalle de cada una (con su fuente, modalidad, prioridad,
+  estado y el botón de eliminar de siempre) — nada de esto se perdió, solo
+  se movió a la vista expandida.
+- Los filtros existentes (Tecnología, Estado, Prioridad, Fuente,
+  Modalidad) se mantienen todos, más uno nuevo (Responsable). Las
+  pestañas rápidas "Mis oportunidades" / "Sin asignar" / "Seguimiento
+  vencido" son atajos a esos mismos filtros.
+- Los avatares de empresa sin logo real (favicon) ahora usan un color fijo
+  por empresa en vez de siempre el mismo celeste — mismo mecanismo de
+  siempre (iniciales, sin ningún logo inventado), solo con más variedad
+  visual.
+
 ## Cargar vacantes de cualquier fuente, no solo LinkedIn
 
 `/leads/new` (antes "Cargar de LinkedIn") ahora deja elegir de dónde salió

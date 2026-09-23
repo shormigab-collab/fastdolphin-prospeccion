@@ -22,6 +22,31 @@ function initialsOf(name: string) {
     .join("");
 }
 
+// Cuando no hay favicon (la mayoría de las veces, ya que muchas empresas de
+// ejemplo/prospección no tienen dominio cargado todavía), en vez de un
+// mismo cuadro celeste para todas, cada empresa recibe un color fijo entre
+// varios — determinado por su propio nombre (mismo nombre → mismo color
+// siempre), para que la lista se vea tan viva como cuando sí hay logos
+// reales, sin inventar ningún logo que no exista.
+const PALETTE = [
+  "bg-dolphin-600 text-white",
+  "bg-amber-500 text-white",
+  "bg-ink text-white",
+  "bg-rose-500 text-white",
+  "bg-emerald-600 text-white",
+  "bg-sky-600 text-white",
+  "bg-violet-600 text-white",
+  "bg-orange-500 text-white",
+];
+
+function colorFor(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i++) {
+    hash = (hash * 31 + name.charCodeAt(i)) >>> 0;
+  }
+  return PALETTE[hash % PALETTE.length];
+}
+
 export function CompanyLogo({
   name,
   domain,
@@ -43,7 +68,9 @@ export function CompanyLogo({
       <div
         style={{ width: size, height: size }}
         className={
-          "flex shrink-0 items-center justify-center rounded-xl bg-dolphin-50 text-xs font-semibold text-dolphin-700 " +
+          "flex shrink-0 items-center justify-center rounded-xl text-xs font-bold " +
+          colorFor(name) +
+          " " +
           (className ?? "")
         }
       >

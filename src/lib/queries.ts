@@ -20,8 +20,17 @@ export async function listSignals(filter?: {
   // Busca por coincidencia parcial en el título de la señal o el nombre de
   // la empresa (case-insensitive) — filtro de texto libre para el buscador.
   q?: string;
+  // Responsable asignado — un id de usuario real, o el string especial
+  // "unassigned" para "Sin asignar" (no se puede pasar null por querystring).
+  assignedTo?: string;
+  // Solo señales cuyo seguimiento programado (next_follow_up_at) ya venció
+  // (es antes de hoy) — para la pestaña rápida "Seguimiento vencido".
+  overdueOnly?: boolean;
 }) {
   const searchTerm = filter?.q?.trim() ? `%${filter.q.trim()}%` : null;
+  const assignedToId =
+    filter?.assignedTo && filter.assignedTo !== "unassigned" ? filter.assignedTo : null;
+  const onlyUnassigned = filter?.assignedTo === "unassigned";
 
   const rows = (await sql`
     select
@@ -30,14 +39,21 @@ export async function listSignals(filter?: {
         'id', c.id, 'name', c.name, 'domain', c.domain, 'industry', c.industry,
         'size_range', c.size_range, 'linkedin_url', c.linkedin_url,
         'careers_url', c.careers_url, 'notes', c.notes, 'created_at', c.created_at
-      ) as company
+      ) as company,
+      case when u.id is null then null else
+        json_build_object('id', u.id, 'full_name', u.full_name, 'email', u.email)
+      end as assigned_user
     from signals s
     join companies c on c.id = s.company_id
+    left join users u on u.id = s.assigned_to
     where (${filter?.status ?? null}::text is null or s.status = ${filter?.status ?? null})
       and (${filter?.technology ?? null}::text is null or s.technology = ${filter?.technology ?? null})
       and (${filter?.priority ?? null}::text is null or s.priority = ${filter?.priority ?? null})
       and (${filter?.source ?? null}::text is null or s.source = ${filter?.source ?? null})
       and (${filter?.workMode ?? null}::text is null or s.work_mode = ${filter?.workMode ?? null})
+      and (${assignedToId}::uuid is null or s.assigned_to = ${assignedToId}::uuid)
+      and (${onlyUnassigned} = false or s.assigned_to is null)
+      and (${filter?.overdueOnly ?? false} = false or s.next_follow_up_at < current_date)
       and (
         ${searchTerm}::text is null
         or s.title ilike ${searchTerm}
@@ -447,8 +463,69 @@ export async function confirmVacancy(signalId: string, userId: string | null) {
   `;
 }
 
+// Señales con seguimiento programado (next_follow_up_at) que ya venció o
+// es hoy — alimenta el panel "Pendientes de hoy" de Actividad con fechas
+// reales, nunca inventadas. Vencidas primero.
+export async function listPendingFollowUps(limit = 20) {
+  const rows = (await sql`
+    select
+      s.*,
+      json_build_object(
+        'id', c.id, 'name', c.name, 'domain', c.domain, 'industry', c.industry,
+        'size_range', c.size_range, 'linkedin_url', c.linkedin_url,
+        'careers_url', c.careers_url, 'notes', c.notes, 'created_at', c.created_at
+      ) as company
+    from signals s
+    join companies c on c.id = s.company_id
+    where s.next_follow_up_at is not null and s.next_follow_up_at <= current_date
+    order by s.next_follow_up_at asc
+    limit ${limit}
+  `) as unknown as Signal[];
+
+  return rows;
+}
+
 export async function listUsers() {
   return (await sql`
     select id, email, full_name, role, created_at from users order by created_at asc
   `) as unknown as { id: string; email: string; full_name: string | null; role: string; created_at: string }[];
+}
+
+// ---------------------------------------------------------------------------
+// Acciones en lote (barra de selección de /leads) — operan sobre varias
+// señales a la vez, seleccionadas por checkbox. `userId` puede venir null
+// para "Sin asignar" en la asignación en lote.
+// ---------------------------------------------------------------------------
+
+export async function bulkAssignSignals(signalIds: string[], userId: string | null) {
+  if (signalIds.length === 0) return;
+  await sql`
+    update signals set assigned_to = ${userId}, updated_at = now()
+    where id = any(${signalIds}::uuid[])
+  `;
+}
+
+export async function bulkUpdateStatus(signalIds: string[], status: SignalStatus) {
+  if (signalIds.length === 0) return;
+  await sql`
+    update signals set status = ${status}, updated_at = now()
+    where id = any(${signalIds}::uuid[])
+  `;
+}
+
+// Programa (o borra, si date es null) la fecha del próximo seguimiento para
+// varias señales a la vez — es lo que alimenta "Seguimiento vencido" y el
+// panel de "Pendientes de hoy" en Actividad, con datos reales en vez de
+// inventados.
+export async function bulkScheduleFollowUp(
+  signalIds: string[],
+  date: string | null,
+  note?: string | null
+) {
+  if (signalIds.length === 0) return;
+  await sql`
+    update signals
+    set next_follow_up_at = ${date}, next_follow_up_note = ${note ?? null}, updated_at = now()
+    where id = any(${signalIds}::uuid[])
+  `;
 }

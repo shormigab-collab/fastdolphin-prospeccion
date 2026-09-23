@@ -21,3 +21,18 @@ export function timeAgo(iso: string, lang: Lang = "es") {
   const diffMonth = Math.floor(diffDay / 30);
   return t.monthsAgo(diffMonth);
 }
+
+// Fecha corta ("12 mar 2025" / "Mar 12, 2025") para mostrar seguimientos
+// programados — recibe una fecha "YYYY-MM-DD" (columna `date` de Postgres,
+// sin hora) y la formatea en el idioma activo, sin desfasarse por huso
+// horario (por eso se arma la Date en UTC explícitamente).
+export function formatDate(isoDate: string, lang: Lang = "es") {
+  const [year, month, day] = isoDate.split("-").map(Number);
+  const d = new Date(Date.UTC(year, (month ?? 1) - 1, day ?? 1));
+  return d.toLocaleDateString(lang === "es" ? "es-ES" : "en-US", {
+    day: "numeric",
+    month: "short",
+    year: "numeric",
+    timeZone: "UTC",
+  });
+}

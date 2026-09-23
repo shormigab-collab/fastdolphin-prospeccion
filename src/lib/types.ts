@@ -78,7 +78,12 @@ export interface Signal {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  next_follow_up_at: string | null;
+  next_follow_up_note: string | null;
   company?: Company;
+  // Solo viene lleno cuando la consulta hace el join con `users` (listSignals) —
+  // en otros lugares (getSignalById, etc.) queda undefined.
+  assigned_user?: { id: string; full_name: string | null; email: string } | null;
 }
 
 export interface MessageDraft {

@@ -6,7 +6,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { signOut } from "next-auth/react";
 import clsx from "clsx";
 import { Logo } from "@/components/Logo";
-import { IconHome, IconList, IconUpload, IconSettings, IconMenu, IconX } from "@/components/icons";
+import { IconHome, IconList, IconPulse, IconSettings, IconMenu, IconX } from "@/components/icons";
 import { useLanguage } from "@/components/LanguageProvider";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
 
@@ -26,7 +26,7 @@ export function Sidebar({ email, fullName }: { email: string; fullName?: string 
   const links = [
     { href: "/dashboard", label: t.nav.resumen, icon: IconHome },
     { href: "/leads", label: t.nav.señales, icon: IconList },
-    { href: "/leads/new", label: t.nav.cargar, icon: IconUpload },
+    { href: "/activity", label: t.nav.actividad, icon: IconPulse },
     { href: "/settings", label: t.nav.config, icon: IconSettings },
   ];
 
@@ -100,7 +100,7 @@ export function Sidebar({ email, fullName }: { email: string; fullName?: string 
           <nav className="mt-2 flex flex-col gap-1 px-3">
             {links.map((link) => {
               const Icon = link.icon;
-              const active = pathname === link.href;
+              const active = pathname === link.href || pathname.startsWith(link.href + "/");
               return (
                 <Link
                   key={link.href}

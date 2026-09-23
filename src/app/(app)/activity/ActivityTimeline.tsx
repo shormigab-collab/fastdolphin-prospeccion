@@ -1,10 +1,10 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { TechBadge, SourceBadge } from "@/components/Badges";
 import { CompanyLogo } from "@/components/CompanyLogo";
-import { IconPulse, IconNote, IconMail, IconCheck } from "@/components/icons";
+import { IconPulse, IconNote, IconMail, IconCheck, IconChevronRight } from "@/components/icons";
 import { timeAgo } from "@/lib/time";
 import { useLanguage } from "@/components/LanguageProvider";
 import type { RecentActivityItem } from "@/lib/queries";
@@ -12,10 +12,6 @@ import type { RecentActivityItem } from "@/lib/queries";
 type Tab = "all" | "created" | "contact" | "note-status";
 type Range = "today" | "7d" | "30d" | "all";
 
-// Traduce las pestañas de la interfaz (que agrupan "nota" y "cambio de
-// estado" bajo un mismo "Seguimientos"/"Follow-ups") al filtro real que
-// entiende la API. La pestaña combinada no tiene un único `kind` — se
-// resuelve pidiendo "todas" y filtrando en el cliente entre note/status.
 async function fetchActivity(tab: Tab, range: Range): Promise<RecentActivityItem[]> {
   const kindParam = tab === "created" || tab === "contact" ? tab : undefined;
   const params = new URLSearchParams({ range });
@@ -32,11 +28,12 @@ async function fetchActivity(tab: Tab, range: Range): Promise<RecentActivityItem
   return items;
 }
 
-export function RecentActivity({ initialItems }: { initialItems: RecentActivityItem[] }) {
+export function ActivityTimeline({ initialItems }: { initialItems: RecentActivityItem[] }) {
   const { t, lang } = useLanguage();
   const [tab, setTab] = useState<Tab>("all");
   const [range, setRange] = useState<Range>("today");
   const [items, setItems] = useState(initialItems);
+  const [grouped, setGrouped] = useState(true);
   const [isPending, startTransition] = useTransition();
 
   const TABS: { value: Tab; label: string }[] = [
@@ -68,9 +65,7 @@ export function RecentActivity({ initialItems }: { initialItems: RecentActivityI
       const preview = (a.note_body ?? "").slice(0, 90);
       return `"${preview}${(a.note_body?.length ?? 0) > 90 ? "…" : ""}"`;
     }
-    if (a.kind === "created") {
-      return a.signal_title;
-    }
+    if (a.kind === "created") return a.signal_title;
     if (a.kind === "contact") {
       return a.contact_name ? t.activity.contactFound(a.contact_name) : t.activity.contactFoundGeneric;
     }
@@ -86,19 +81,24 @@ export function RecentActivity({ initialItems }: { initialItems: RecentActivityI
     });
   }
 
-  return (
-    <div className="mt-10">
-      <div className="flex flex-wrap items-center justify-between gap-3">
-        <h2 className="text-sm font-semibold uppercase tracking-wide text-slate-500">
-          {t.activity.title}
-        </h2>
-        <Link href="/activity" className="text-xs font-medium text-dolphin-600 hover:underline">
-          {t.activity.viewAll}
-        </Link>
-      </div>
-      <p className="mt-1 text-sm text-slate-500">{t.activity.subtitle}</p>
+  const groups = useMemo(() => {
+    const byCompany = new Map<string, { name: string; domain: string | null; items: RecentActivityItem[] }>();
+    const order: string[] = [];
+    for (const a of items) {
+      const existing = byCompany.get(a.company_name);
+      if (existing) {
+        existing.items.push(a);
+      } else {
+        byCompany.set(a.company_name, { name: a.company_name, domain: a.company_domain, items: [a] });
+        order.push(a.company_name);
+      }
+    }
+    return order.map((name) => byCompany.get(name)!);
+  }, [items]);
 
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+  return (
+    <div>
+      <div className="flex flex-wrap items-center justify-between gap-3">
         <div className="flex flex-wrap gap-2">
           {TABS.map((tb) => (
             <button
@@ -116,7 +116,6 @@ export function RecentActivity({ initialItems }: { initialItems: RecentActivityI
             </button>
           ))}
         </div>
-
         <div className="relative">
           <select
             value={range}
@@ -137,8 +136,52 @@ export function RecentActivity({ initialItems }: { initialItems: RecentActivityI
         <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-6 shadow-card">
           <p className="text-sm text-slate-500">{t.activity.empty}</p>
         </div>
+      ) : grouped ? (
+        <div className="mt-4 space-y-4">
+          {groups.map((g) => (
+            <div key={g.name} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
+              <div className="flex items-center justify-between gap-3">
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <CompanyLogo name={g.name} domain={g.domain} size={32} />
+                  <div className="min-w-0">
+                    <p className="truncate font-semibold text-ink">{g.name}</p>
+                    <p className="text-xs text-slate-400">{t.activity.activitiesCount(g.items.length)}</p>
+                  </div>
+                </div>
+                <Link
+                  href={`/leads/${g.items[0].signal_id}`}
+                  className="shrink-0 text-xs font-medium text-dolphin-600 hover:underline"
+                >
+                  {t.activity.viewOpportunity}
+                </Link>
+              </div>
+              <div className="mt-3 space-y-2.5 border-t border-slate-100 pt-3">
+                {g.items.map((a, i) => {
+                  const meta = KIND_META[a.kind];
+                  const Icon = meta.icon;
+                  return (
+                    <Link
+                      key={`${a.kind}-${a.signal_id}-${i}`}
+                      href={`/leads/${a.signal_id}`}
+                      className="flex items-start gap-2.5 rounded-xl px-1.5 py-1 hover:bg-slate-50"
+                    >
+                      <div className={`mt-0.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-lg ${meta.className}`}>
+                        <Icon className="h-3 w-3" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-ink">{meta.label}</p>
+                        <p className="truncate text-xs text-slate-500">{describeActivity(a)}</p>
+                      </div>
+                      <span className="shrink-0 text-xs text-slate-400">{timeAgo(a.at, lang)}</span>
+                    </Link>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+        </div>
       ) : (
-        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
           {items.map((a, i) => {
             const meta = KIND_META[a.kind];
             const Icon = meta.icon;
@@ -146,10 +189,7 @@ export function RecentActivity({ initialItems }: { initialItems: RecentActivityI
               <Link
                 key={`${a.kind}-${a.signal_id}-${i}`}
                 href={`/leads/${a.signal_id}`}
-                className={
-                  "flex flex-col rounded-2xl border bg-white p-4 shadow-card transition hover:border-dolphin-200 " +
-                  (i === 0 ? "border-dolphin-200 ring-1 ring-dolphin-100" : "border-slate-200")
-                }
+                className="flex flex-col rounded-2xl border border-slate-200 bg-white p-4 shadow-card transition hover:border-dolphin-200"
               >
                 <div className="flex items-center gap-2">
                   <div className={`flex h-7 w-7 items-center justify-center rounded-lg ${meta.className}`}>
@@ -158,17 +198,13 @@ export function RecentActivity({ initialItems }: { initialItems: RecentActivityI
                   <span className="text-xs font-medium text-slate-500">{meta.label}</span>
                   <span className="ml-auto shrink-0 text-xs text-slate-400">{timeAgo(a.at, lang)}</span>
                 </div>
-
                 <div className="mt-3 flex items-start gap-2.5">
                   <CompanyLogo name={a.company_name} domain={a.company_domain} size={32} />
                   <div className="min-w-0">
                     <p className="truncate font-semibold text-ink">{a.company_name}</p>
-                    <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">
-                      {describeActivity(a)}
-                    </p>
+                    <p className="mt-0.5 line-clamp-2 text-xs text-slate-500">{describeActivity(a)}</p>
                   </div>
                 </div>
-
                 <div className="mt-3 flex items-center gap-1.5">
                   <TechBadge technology={a.technology} />
                   <SourceBadge source={a.source} lang={lang} />
@@ -181,6 +217,36 @@ export function RecentActivity({ initialItems }: { initialItems: RecentActivityI
           })}
         </div>
       )}
+
+      <div className="mt-6 rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
+        <div className="flex items-center justify-between gap-3">
+          <div>
+            <p className="text-sm font-semibold text-ink">{t.activity.groupToggle}</p>
+            <p className="mt-0.5 text-xs text-slate-500">{t.activity.groupToggleHelp}</p>
+          </div>
+          <button
+            type="button"
+            role="switch"
+            aria-checked={grouped}
+            onClick={() => setGrouped((g) => !g)}
+            className={
+              "relative h-6 w-11 shrink-0 rounded-full transition-colors " +
+              (grouped ? "bg-dolphin-600" : "bg-slate-200")
+            }
+          >
+            <span
+              className={
+                "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform " +
+                (grouped ? "translate-x-5" : "translate-x-0.5")
+              }
+            />
+          </button>
+        </div>
+        <p className="mt-3 flex items-start gap-1.5 text-xs text-slate-400">
+          <IconChevronRight className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          {t.activity.groupToggleNote}
+        </p>
+      </div>
     </div>
   );
 }

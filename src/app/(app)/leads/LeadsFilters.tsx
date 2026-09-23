@@ -45,14 +45,27 @@ export interface LeadsFilterValues {
   priority?: string;
   source?: string;
   workMode?: string;
+  assignedTo?: string;
   q?: string;
   all?: string;
 }
 
-export function LeadsFilters({ current }: { current: LeadsFilterValues }) {
+export function LeadsFilters({
+  current,
+  users,
+}: {
+  current: LeadsFilterValues;
+  users: { id: string; email: string; full_name: string | null }[];
+}) {
   const router = useRouter();
   const { t } = useLanguage();
   const [isPending, startTransition] = useTransition();
+
+  const assignedToOptions = [
+    { value: "", label: t.leads.allAssignedTo },
+    { value: "unassigned", label: t.leads.unassigned },
+    ...users.map((u) => ({ value: u.id, label: u.full_name ?? u.email })),
+  ];
 
   const statusOptions = [
     { value: "", label: t.leads.allStatuses },
@@ -78,7 +91,7 @@ export function LeadsFilters({ current }: { current: LeadsFilterValues }) {
   ];
 
   function updateParam(
-    key: "status" | "technology" | "priority" | "source" | "workMode",
+    key: "status" | "technology" | "priority" | "source" | "workMode" | "assignedTo",
     value: string
   ) {
     const merged = { ...current, [key]: value || undefined };
@@ -88,6 +101,7 @@ export function LeadsFilters({ current }: { current: LeadsFilterValues }) {
     if (merged.priority) usp.set("priority", merged.priority);
     if (merged.source) usp.set("source", merged.source);
     if (merged.workMode) usp.set("workMode", merged.workMode);
+    if (merged.assignedTo) usp.set("assignedTo", merged.assignedTo);
     if (merged.q) usp.set("q", merged.q);
     if (merged.all) usp.set("all", merged.all);
     const qs = usp.toString();
@@ -100,11 +114,11 @@ export function LeadsFilters({ current }: { current: LeadsFilterValues }) {
   return (
     <div className="flex flex-wrap gap-2">
       <FilterSelect
-        label={t.leads.filterStatus}
-        value={current.status ?? ""}
-        options={statusOptions}
+        label={t.leads.filterAssignedTo}
+        value={current.assignedTo ?? ""}
+        options={assignedToOptions}
         disabled={isPending}
-        onChange={(v) => updateParam("status", v)}
+        onChange={(v) => updateParam("assignedTo", v)}
       />
       <FilterSelect
         label={t.leads.filterTechnology}
@@ -112,6 +126,13 @@ export function LeadsFilters({ current }: { current: LeadsFilterValues }) {
         options={techOptions}
         disabled={isPending}
         onChange={(v) => updateParam("technology", v)}
+      />
+      <FilterSelect
+        label={t.leads.filterStatus}
+        value={current.status ?? ""}
+        options={statusOptions}
+        disabled={isPending}
+        onChange={(v) => updateParam("status", v)}
       />
       <FilterSelect
         label={t.leads.filterPriority}

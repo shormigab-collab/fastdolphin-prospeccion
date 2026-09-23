@@ -1,10 +1,11 @@
 import Link from "next/link";
-import { listSignals } from "@/lib/queries";
-import { StatusBadge, TechBadge, PriorityBadge, SourceBadge, WorkModeBadge } from "@/components/Badges";
+import { auth } from "@/auth";
+import { listSignals, listUsers } from "@/lib/queries";
+import { groupSignalsByCompany } from "@/lib/groupSignals";
 import { matchesLocationPolicy } from "@/lib/policy";
-import { IconSearch, IconCheck } from "@/components/icons";
+import { IconSearch, IconShield } from "@/components/icons";
 import { LeadsFilters } from "./LeadsFilters";
-import { DeleteSignalButton } from "./DeleteSignalButton";
+import { LeadsTable } from "./LeadsTable";
 import { getDict } from "@/lib/i18n";
 import { getLang } from "@/lib/getLang";
 import type { SignalStatus, SignalPriority, Technology, SignalSource, WorkMode } from "@/lib/types";
@@ -15,8 +16,10 @@ type LeadsSearchParams = {
   priority?: string;
   source?: string;
   workMode?: string;
+  assignedTo?: string;
   q?: string;
   all?: string;
+  overdue?: string;
 };
 
 // Arma un href de /leads a partir de los filtros actuales, reemplazando
@@ -30,8 +33,10 @@ function buildHref(base: LeadsSearchParams, overrides: LeadsSearchParams) {
   if (merged.priority) usp.set("priority", merged.priority);
   if (merged.source) usp.set("source", merged.source);
   if (merged.workMode) usp.set("workMode", merged.workMode);
+  if (merged.assignedTo) usp.set("assignedTo", merged.assignedTo);
   if (merged.q) usp.set("q", merged.q);
   if (merged.all) usp.set("all", merged.all);
+  if (merged.overdue) usp.set("overdue", merged.overdue);
   const s = usp.toString();
   return s ? `/leads?${s}` : "/leads";
 }
@@ -43,21 +48,30 @@ export default async function LeadsPage({
 }) {
   const lang = getLang();
   const t = getDict(lang);
+  const session = await auth();
+  const myId = session?.user?.id ?? null;
 
-  const allSignals = await listSignals({
-    status: searchParams.status as SignalStatus | undefined,
-    technology: searchParams.technology as Technology | undefined,
-    priority: searchParams.priority as SignalPriority | undefined,
-    source: searchParams.source as SignalSource | undefined,
-    workMode: searchParams.workMode as WorkMode | undefined,
-    q: searchParams.q,
-  });
+  const [allSignals, users] = await Promise.all([
+    listSignals({
+      status: searchParams.status as SignalStatus | undefined,
+      technology: searchParams.technology as Technology | undefined,
+      priority: searchParams.priority as SignalPriority | undefined,
+      source: searchParams.source as SignalSource | undefined,
+      workMode: searchParams.workMode as WorkMode | undefined,
+      assignedTo: searchParams.assignedTo,
+      q: searchParams.q,
+      overdueOnly: searchParams.overdue === "1",
+    }),
+    listUsers(),
+  ]);
 
   const showAll = searchParams.all === "1";
-  const signals = showAll
+  const policySignals = showAll
     ? allSignals
     : allSignals.filter((s) => matchesLocationPolicy(s.work_mode, s.location));
-  const hiddenCount = allSignals.length - signals.length;
+  const hiddenCount = allSignals.length - policySignals.length;
+
+  const signals = policySignals;
 
   const base: LeadsSearchParams = {
     status: searchParams.status,
@@ -65,9 +79,18 @@ export default async function LeadsPage({
     priority: searchParams.priority,
     source: searchParams.source,
     workMode: searchParams.workMode,
+    assignedTo: searchParams.assignedTo,
     q: searchParams.q,
     all: searchParams.all,
+    overdue: searchParams.overdue,
   };
+
+  const groups = groupSignalsByCompany(signals);
+
+  const isMine = !!myId && searchParams.assignedTo === myId;
+  const isUnassigned = searchParams.assignedTo === "unassigned";
+  const isOverdue = searchParams.overdue === "1";
+  const isDefaultTab = !searchParams.assignedTo && !isOverdue;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-10">
@@ -75,28 +98,7 @@ export default async function LeadsPage({
       <div className="mt-1 flex flex-wrap items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-bold text-ink">{t.leads.title}</h1>
-          <p className="mt-1 text-sm text-slate-500">
-            {t.leads.countFound(signals.length)}
-            {!showAll && hiddenCount > 0 && (
-              <>
-                {" · "}
-                <Link
-                  href={buildHref(base, { all: "1" })}
-                  className="text-dolphin-600 hover:underline"
-                >
-                  {t.leads.hiddenLink(hiddenCount)}
-                </Link>
-              </>
-            )}
-            {showAll && (
-              <>
-                {" · "}
-                <Link href={buildHref(base, { all: undefined })} className="text-dolphin-600 hover:underline">
-                  {t.leads.hideOutOfPolicy}
-                </Link>
-              </>
-            )}
-          </p>
+          <p className="mt-1 text-sm text-slate-500">{t.leads.subtitle}</p>
         </div>
         <Link
           href="/leads/new"
@@ -106,8 +108,6 @@ export default async function LeadsPage({
         </Link>
       </div>
 
-      <p className="mt-2 text-xs text-slate-500">{t.leads.policyNote}</p>
-
       <form action="/leads" method="GET" className="mt-6 flex flex-wrap items-center gap-2">
         {searchParams.status && <input type="hidden" name="status" value={searchParams.status} />}
         {searchParams.technology && (
@@ -116,7 +116,11 @@ export default async function LeadsPage({
         {searchParams.priority && <input type="hidden" name="priority" value={searchParams.priority} />}
         {searchParams.source && <input type="hidden" name="source" value={searchParams.source} />}
         {searchParams.workMode && <input type="hidden" name="workMode" value={searchParams.workMode} />}
+        {searchParams.assignedTo && (
+          <input type="hidden" name="assignedTo" value={searchParams.assignedTo} />
+        )}
         {searchParams.all && <input type="hidden" name="all" value={searchParams.all} />}
+        {searchParams.overdue && <input type="hidden" name="overdue" value={searchParams.overdue} />}
         <div className="relative flex-1 min-w-[220px] max-w-sm">
           <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -144,122 +148,76 @@ export default async function LeadsPage({
       </form>
 
       <div className="mt-4">
-        <LeadsFilters current={base} />
+        <LeadsFilters current={base} users={users} />
       </div>
 
-      {/* Tabla completa — solo desde tablet/desktop (md+). En pantallas más
-          angostas la lee mejor como tarjetas apiladas (ver abajo). */}
-      <div className="mt-6 hidden overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-card md:block">
-        <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-slate-200 text-sm">
-            <thead className="bg-slate-50 text-left text-xs font-semibold uppercase text-slate-500">
-              <tr>
-                <th className="px-4 py-3">{t.leads.colSignal}</th>
-                <th className="px-4 py-3">{t.leads.colCompany}</th>
-                <th className="px-4 py-3">{t.leads.colTechnology}</th>
-                <th className="px-4 py-3">{t.leads.colSource}</th>
-                <th className="px-4 py-3">{t.leads.colWorkMode}</th>
-                <th className="px-4 py-3">{t.leads.colPriority}</th>
-                <th className="px-4 py-3">{t.leads.colStatus}</th>
-                <th className="px-4 py-3">
-                  <span className="sr-only">{t.leads.colActions}</span>
-                </th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-100">
-              {signals.map((s) => (
-                <tr key={s.id} className="hover:bg-slate-50">
-                  <td className="max-w-xs px-4 py-3">
-                    <Link
-                      href={`/leads/${s.id}`}
-                      className="font-medium text-dolphin-700 hover:underline"
-                      title={s.title}
-                    >
-                      {s.title}
-                    </Link>
-                  </td>
-                  <td className="px-4 py-3 text-slate-600">{s.company?.name ?? "—"}</td>
-                  <td className="px-4 py-3">
-                    <TechBadge technology={s.technology} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <SourceBadge source={s.source} originLabel={s.origin_label} lang={lang} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <WorkModeBadge workMode={s.work_mode} location={s.location} lang={lang} />
-                  </td>
-                  <td className="px-4 py-3">
-                    <div className="flex items-center gap-1.5">
-                      <PriorityBadge priority={s.priority} lang={lang} />
-                      {s.vacancy_confirmed_at && (
-                        <span title={t.leads.confirmedTitle} className="text-emerald-600">
-                          <IconCheck className="h-3.5 w-3.5" />
-                        </span>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-4 py-3">
-                    <StatusBadge status={s.status} lang={lang} />
-                  </td>
-                  <td className="px-4 py-3 text-right">
-                    <DeleteSignalButton signalId={s.id} title={s.title} />
-                  </td>
-                </tr>
-              ))}
-              {signals.length === 0 && (
-                <tr>
-                  <td colSpan={8} className="px-4 py-8 text-center text-slate-500">
-                    {t.leads.noSignalsFilters}
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+      <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
+        <div className="flex flex-wrap gap-2">
+          <QuickTab
+            label={t.leads.tabAll}
+            active={isDefaultTab}
+            href={buildHref(base, { assignedTo: undefined, overdue: undefined })}
+          />
+          {myId && (
+            <QuickTab
+              label={t.leads.tabMine}
+              active={isMine}
+              href={buildHref(base, { assignedTo: myId, overdue: undefined })}
+            />
+          )}
+          <QuickTab
+            label={t.leads.tabUnassigned}
+            active={isUnassigned}
+            href={buildHref(base, { assignedTo: "unassigned", overdue: undefined })}
+          />
+          <QuickTab
+            label={t.leads.tabOverdue}
+            active={isOverdue}
+            href={buildHref(base, { assignedTo: undefined, overdue: "1" })}
+          />
+        </div>
+
+        <div className="flex items-center gap-2 text-xs text-slate-500">
+          {hiddenCount > 0 && !showAll && (
+            <Link
+              href={buildHref(base, { all: "1" })}
+              className="inline-flex items-center gap-1.5 rounded-full border border-slate-200 bg-white px-3 py-1.5 font-medium text-slate-600 hover:bg-slate-50"
+              title={t.leads.hiddenLink(hiddenCount)}
+            >
+              <IconShield className="h-3.5 w-3.5" />
+              {t.leads.policyApplied}
+            </Link>
+          )}
+          {showAll && (
+            <Link href={buildHref(base, { all: undefined })} className="text-dolphin-600 hover:underline">
+              {t.leads.hideOutOfPolicy}
+            </Link>
+          )}
+          <span>{t.leads.countCompanies(groups.length)}</span>
         </div>
       </div>
 
-      {/* Tarjetas — solo en móvil (md:hidden), mismos datos que la tabla
-          pero apilados para no tener que hacer scroll horizontal. */}
-      <div className="mt-6 space-y-3 md:hidden">
-        {signals.map((s) => (
-          <div
-            key={s.id}
-            className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <Link
-                href={`/leads/${s.id}`}
-                className="font-medium text-dolphin-700 hover:underline"
-              >
-                {s.title}
-              </Link>
-              <DeleteSignalButton signalId={s.id} title={s.title} />
-            </div>
-            <div className="mt-0.5 text-sm text-slate-600">{s.company?.name ?? "—"}</div>
+      <p className="mt-2 text-xs text-slate-400">{t.leads.policyNote}</p>
 
-            <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <TechBadge technology={s.technology} />
-              <SourceBadge source={s.source} originLabel={s.origin_label} lang={lang} />
-              <WorkModeBadge workMode={s.work_mode} location={s.location} lang={lang} />
-            </div>
-
-            <div className="mt-3 flex flex-wrap items-center gap-1.5">
-              <PriorityBadge priority={s.priority} lang={lang} />
-              {s.vacancy_confirmed_at && (
-                <span title={t.leads.confirmedTitle} className="text-emerald-600">
-                  <IconCheck className="h-3.5 w-3.5" />
-                </span>
-              )}
-              <StatusBadge status={s.status} lang={lang} />
-            </div>
-          </div>
-        ))}
-        {signals.length === 0 && (
-          <p className="rounded-2xl border border-slate-200 bg-white px-4 py-8 text-center text-sm text-slate-500 shadow-card">
-            {t.leads.noSignalsFilters}
-          </p>
-        )}
+      <div className="mt-4">
+        <LeadsTable groups={groups} users={users} noSignalsLabel={t.leads.noSignalsFilters} />
       </div>
     </div>
+  );
+}
+
+function QuickTab({ label, active, href }: { label: string; active: boolean; href: string }) {
+  return (
+    <Link
+      href={href}
+      className={
+        "rounded-full border px-3 py-1.5 text-xs font-medium " +
+        (active
+          ? "border-dolphin-600 bg-dolphin-600 text-white"
+          : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50")
+      }
+    >
+      {label}
+    </Link>
   );
 }

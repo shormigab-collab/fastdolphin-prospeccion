@@ -34,6 +34,29 @@ export function StatusBadge({ status, lang = "es" }: { status: SignalStatus; lan
   );
 }
 
+const statusDotStyles: Record<SignalStatus, string> = {
+  nuevo: "bg-violet-500 text-violet-700",
+  calificando: "bg-amber-500 text-amber-700",
+  contactado: "bg-sky-500 text-sky-700",
+  en_conversacion: "bg-emerald-500 text-emerald-700",
+  reunion_agendada: "bg-teal-500 text-teal-700",
+  ganado: "bg-green-600 text-green-700",
+  descartado: "bg-slate-400 text-slate-500",
+};
+
+// Variante "punto + texto" (sin fondo de pastilla) para la tabla de
+// Oportunidades — StatusBadge (arriba) sigue igual en todos los demás
+// lugares que ya la usaban.
+export function StatusDot({ status, lang = "es" }: { status: SignalStatus; lang?: Lang }) {
+  const [dot, text] = statusDotStyles[status].split(" ");
+  return (
+    <span className={clsx("inline-flex items-center gap-1.5 text-sm font-medium", text)}>
+      <span className={clsx("h-1.5 w-1.5 shrink-0 rounded-full", dot)} />
+      {statusLabel(status, lang)}
+    </span>
+  );
+}
+
 const priorityStyles: Record<SignalPriority, string> = {
   alta: "bg-red-50 text-red-700",
   media: "bg-amber-50 text-amber-700",

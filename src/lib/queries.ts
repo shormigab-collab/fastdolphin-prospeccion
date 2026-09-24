@@ -15,7 +15,9 @@ export async function listSignals(filter?: {
   status?: SignalStatus;
   technology?: Technology;
   priority?: SignalPriority;
-  source?: SignalSource;
+  // Una o varias fuentes a la vez (por ejemplo Apollo + Adzuna) — un array
+  // vacío o undefined significa "todas las fuentes", sin filtrar.
+  sources?: SignalSource[];
   workMode?: WorkMode;
   // Busca por coincidencia parcial en el título de la señal o el nombre de
   // la empresa (case-insensitive) — filtro de texto libre para el buscador.
@@ -31,6 +33,7 @@ export async function listSignals(filter?: {
   const assignedToId =
     filter?.assignedTo && filter.assignedTo !== "unassigned" ? filter.assignedTo : null;
   const onlyUnassigned = filter?.assignedTo === "unassigned";
+  const sourceList = filter?.sources && filter.sources.length > 0 ? filter.sources : null;
 
   const rows = (await sql`
     select
@@ -49,7 +52,7 @@ export async function listSignals(filter?: {
     where (${filter?.status ?? null}::text is null or s.status = ${filter?.status ?? null})
       and (${filter?.technology ?? null}::text is null or s.technology = ${filter?.technology ?? null})
       and (${filter?.priority ?? null}::text is null or s.priority = ${filter?.priority ?? null})
-      and (${filter?.source ?? null}::text is null or s.source = ${filter?.source ?? null})
+      and (${sourceList}::text[] is null or s.source = any(${sourceList}::text[]))
       and (${filter?.workMode ?? null}::text is null or s.work_mode = ${filter?.workMode ?? null})
       and (${assignedToId}::uuid is null or s.assigned_to = ${assignedToId}::uuid)
       and (${onlyUnassigned} = false or s.assigned_to is null)

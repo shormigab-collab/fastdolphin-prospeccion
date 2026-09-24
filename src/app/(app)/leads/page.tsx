@@ -51,12 +51,18 @@ export default async function LeadsPage({
   const session = await auth();
   const myId = session?.user?.id ?? null;
 
+  // El filtro de fuente admite varias a la vez (ej. Apollo + Adzuna) —
+  // viajan por la URL como una sola lista separada por comas ("apollo,adzuna").
+  const sourceValues = searchParams.source
+    ? (searchParams.source.split(",").filter(Boolean) as SignalSource[])
+    : undefined;
+
   const [allSignals, users] = await Promise.all([
     listSignals({
       status: searchParams.status as SignalStatus | undefined,
       technology: searchParams.technology as Technology | undefined,
       priority: searchParams.priority as SignalPriority | undefined,
-      source: searchParams.source as SignalSource | undefined,
+      sources: sourceValues,
       workMode: searchParams.workMode as WorkMode | undefined,
       assignedTo: searchParams.assignedTo,
       q: searchParams.q,

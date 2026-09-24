@@ -18,6 +18,7 @@
 
 import type { Technology } from "@/lib/types";
 import { TITLE_KEYWORDS } from "@/lib/jobBoards";
+import { mentionsNearshore } from "@/lib/nearshore";
 
 export function isRemotiveConnected() {
   // No requiere llave ni registro — siempre disponible.
@@ -30,6 +31,9 @@ export interface RemotiveSignalCandidate {
   url: string;
   location: string | null;
   technology: Technology;
+  // Ver @/lib/nearshore — coincidencia de texto, no un dato que Remotive
+  // clasifique.
+  mentionsNearshore: boolean;
 }
 
 export interface RemotiveSyncResult {
@@ -43,6 +47,7 @@ interface RemotiveJob {
   title?: string;
   company_name?: string;
   candidate_required_location?: string;
+  description?: string; // HTML — solo se usa para buscar palabras clave, no se guarda
 }
 
 // Remotive solo acepta un término de búsqueda por llamada — se usa la
@@ -78,6 +83,7 @@ export async function fetchRemotiveJobs(
         url: j.url!,
         location: j.candidate_required_location || null,
         technology,
+        mentionsNearshore: mentionsNearshore(j.title, j.candidate_required_location, j.description),
       }));
 
     return { candidates };

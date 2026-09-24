@@ -20,6 +20,7 @@ type LeadsSearchParams = {
   q?: string;
   all?: string;
   overdue?: string;
+  nearshore?: string;
 };
 
 // Arma un href de /leads a partir de los filtros actuales, reemplazando
@@ -37,6 +38,7 @@ function buildHref(base: LeadsSearchParams, overrides: LeadsSearchParams) {
   if (merged.q) usp.set("q", merged.q);
   if (merged.all) usp.set("all", merged.all);
   if (merged.overdue) usp.set("overdue", merged.overdue);
+  if (merged.nearshore) usp.set("nearshore", merged.nearshore);
   const s = usp.toString();
   return s ? `/leads?${s}` : "/leads";
 }
@@ -67,6 +69,7 @@ export default async function LeadsPage({
       assignedTo: searchParams.assignedTo,
       q: searchParams.q,
       overdueOnly: searchParams.overdue === "1",
+      nearshoreOnly: searchParams.nearshore === "1",
     }),
     listUsers(),
   ]);
@@ -89,6 +92,7 @@ export default async function LeadsPage({
     q: searchParams.q,
     all: searchParams.all,
     overdue: searchParams.overdue,
+    nearshore: searchParams.nearshore,
   };
 
   const groups = groupSignalsByCompany(signals);
@@ -96,7 +100,8 @@ export default async function LeadsPage({
   const isMine = !!myId && searchParams.assignedTo === myId;
   const isUnassigned = searchParams.assignedTo === "unassigned";
   const isOverdue = searchParams.overdue === "1";
-  const isDefaultTab = !searchParams.assignedTo && !isOverdue;
+  const isNearshore = searchParams.nearshore === "1";
+  const isDefaultTab = !searchParams.assignedTo && !isOverdue && !isNearshore;
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-6 sm:px-8 sm:py-10">
@@ -127,6 +132,9 @@ export default async function LeadsPage({
         )}
         {searchParams.all && <input type="hidden" name="all" value={searchParams.all} />}
         {searchParams.overdue && <input type="hidden" name="overdue" value={searchParams.overdue} />}
+        {searchParams.nearshore && (
+          <input type="hidden" name="nearshore" value={searchParams.nearshore} />
+        )}
         <div className="relative flex-1 min-w-[220px] max-w-sm">
           <IconSearch className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
           <input
@@ -162,24 +170,29 @@ export default async function LeadsPage({
           <QuickTab
             label={t.leads.tabAll}
             active={isDefaultTab}
-            href={buildHref(base, { assignedTo: undefined, overdue: undefined })}
+            href={buildHref(base, { assignedTo: undefined, overdue: undefined, nearshore: undefined })}
           />
           {myId && (
             <QuickTab
               label={t.leads.tabMine}
               active={isMine}
-              href={buildHref(base, { assignedTo: myId, overdue: undefined })}
+              href={buildHref(base, { assignedTo: myId, overdue: undefined, nearshore: undefined })}
             />
           )}
           <QuickTab
             label={t.leads.tabUnassigned}
             active={isUnassigned}
-            href={buildHref(base, { assignedTo: "unassigned", overdue: undefined })}
+            href={buildHref(base, { assignedTo: "unassigned", overdue: undefined, nearshore: undefined })}
           />
           <QuickTab
             label={t.leads.tabOverdue}
             active={isOverdue}
-            href={buildHref(base, { assignedTo: undefined, overdue: "1" })}
+            href={buildHref(base, { assignedTo: undefined, overdue: "1", nearshore: undefined })}
+          />
+          <QuickTab
+            label={t.leads.tabNearshore}
+            active={isNearshore}
+            href={buildHref(base, { assignedTo: undefined, overdue: undefined, nearshore: "1" })}
           />
         </div>
 

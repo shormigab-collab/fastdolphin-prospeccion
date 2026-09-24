@@ -20,6 +20,7 @@
 
 import type { Technology } from "@/lib/types";
 import { TITLE_KEYWORDS } from "@/lib/jobBoards";
+import { mentionsNearshore } from "@/lib/nearshore";
 
 export function isRemoteOkConnected() {
   // No requiere llave ni registro — siempre disponible.
@@ -32,6 +33,9 @@ export interface RemoteOkSignalCandidate {
   url: string;
   location: string | null;
   technology: Technology;
+  // Ver @/lib/nearshore — coincidencia de texto, no un dato que RemoteOK
+  // clasifique.
+  mentionsNearshore: boolean;
 }
 
 export interface RemoteOkSyncResult {
@@ -48,6 +52,7 @@ interface RemoteOkJob {
   location?: string;
   url?: string;
   apply_url?: string;
+  description?: string; // HTML — solo se usa para buscar palabras clave, no se guarda
   legal?: string; // solo presente en el primer elemento (aviso legal)
 }
 
@@ -84,6 +89,7 @@ export async function fetchRemoteOkJobs(technology: Technology): Promise<RemoteO
         url: String(j.apply_url || j.url),
         location: j.location || null,
         technology,
+        mentionsNearshore: mentionsNearshore(j.position, j.location, (j.tags ?? []).join(" "), j.description),
       }));
 
     return { candidates };

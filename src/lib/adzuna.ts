@@ -23,6 +23,7 @@
 
 import type { Technology } from "@/lib/types";
 import { TITLE_KEYWORDS } from "@/lib/jobBoards";
+import { mentionsNearshore } from "@/lib/nearshore";
 
 const APP_ID = process.env.ADZUNA_APP_ID;
 const APP_KEY = process.env.ADZUNA_APP_KEY;
@@ -45,6 +46,10 @@ export interface AdzunaSignalCandidate {
   location: string | null;
   workMode: "remoto" | "presencial";
   technology: Technology;
+  // Coincidencia de texto (título/ubicación/descripción) con palabras como
+  // "nearshore" o "LatAm" — ver @/lib/nearshore. No es un dato que Adzuna
+  // clasifique, es una búsqueda de palabras clave hecha acá.
+  mentionsNearshore: boolean;
 }
 
 export interface AdzunaSyncResult {
@@ -111,6 +116,7 @@ export async function fetchAdzunaJobs(
             ? ("remoto" as const)
             : ("presencial" as const),
           technology,
+          mentionsNearshore: mentionsNearshore(title, location?.display_name, description),
         };
       });
 

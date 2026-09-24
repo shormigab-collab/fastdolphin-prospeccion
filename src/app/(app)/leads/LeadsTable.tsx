@@ -11,6 +11,7 @@ import {
   SourceBadge,
   WorkModeBadge,
   PriorityBadge,
+  NearshoreBadge,
 } from "@/components/Badges";
 import {
   IconCheck,
@@ -100,6 +101,7 @@ export function LeadsTable({
                 const isSelected = group.signals.every((s) => selected.has(s.id));
                 const isOpen = expanded.has(group.company.id);
                 const action = nextActionForGroup(group);
+                const isNearshore = group.signals.some((s) => s.mentions_nearshore);
 
                 return (
                   <Fragment key={group.company.id}>
@@ -117,12 +119,15 @@ export function LeadsTable({
                         <div className="flex items-start gap-2.5">
                           <CompanyLogo name={group.company.name} domain={group.company.domain} size={36} />
                           <div className="min-w-0">
-                            <Link
-                              href={`/leads/${primary.id}`}
-                              className="font-semibold text-ink hover:text-dolphin-700 hover:underline"
-                            >
-                              {group.company.name}
-                            </Link>
+                            <div className="flex flex-wrap items-center gap-1.5">
+                              <Link
+                                href={`/leads/${primary.id}`}
+                                className="font-semibold text-ink hover:text-dolphin-700 hover:underline"
+                              >
+                                {group.company.name}
+                              </Link>
+                              {isNearshore && <NearshoreBadge lang={lang} />}
+                            </div>
                             <div className="truncate text-xs text-slate-500">
                               {group.signals.length > 1
                                 ? `${t.leads.signalsCount(group.signals.length)} · ${techs.join(", ")}`
@@ -226,6 +231,7 @@ export function LeadsTable({
           const techs = distinctTechnologies(group);
           const isSelected = group.signals.every((s) => selected.has(s.id));
           const action = nextActionForGroup(group);
+          const isNearshore = group.signals.some((s) => s.mentions_nearshore);
 
           return (
             <div key={group.company.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-card">
@@ -239,9 +245,12 @@ export function LeadsTable({
                 />
                 <CompanyLogo name={group.company.name} domain={group.company.domain} size={36} />
                 <div className="min-w-0 flex-1">
-                  <Link href={`/leads/${primary.id}`} className="font-semibold text-ink hover:underline">
-                    {group.company.name}
-                  </Link>
+                  <div className="flex flex-wrap items-center gap-1.5">
+                    <Link href={`/leads/${primary.id}`} className="font-semibold text-ink hover:underline">
+                      {group.company.name}
+                    </Link>
+                    {isNearshore && <NearshoreBadge lang={lang} />}
+                  </div>
                   <div className="text-xs text-slate-500">
                     {group.signals.length > 1
                       ? `${t.leads.signalsCount(group.signals.length)} · ${techs.join(", ")}`

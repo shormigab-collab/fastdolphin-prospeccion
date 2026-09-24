@@ -84,6 +84,11 @@ export interface Signal {
   // (@/lib/time) para no depender de cuál de las dos sea.
   next_follow_up_at: string | Date | null;
   next_follow_up_note: string | null;
+  // Coincidencia de palabras clave ("nearshore", "LatAm", etc.) en el
+  // título/ubicación/descripción de la vacante original — solo se calcula
+  // para señales de Adzuna/RemoteOK/Remotive (ver @/lib/nearshore). Nunca es
+  // un dato certero, siempre "posible nearshore" en la interfaz.
+  mentions_nearshore: boolean;
   company?: Company;
   // Solo viene lleno cuando la consulta hace el join con `users` (listSignals) —
   // en otros lugares (getSignalById, etc.) queda undefined.

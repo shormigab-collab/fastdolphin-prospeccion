@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getSignalById, messagesForSignal, notesForSignal } from "@/lib/queries";
-import { TechBadge, PriorityBadge, SourceBadge, WorkModeBadge } from "@/components/Badges";
+import { TechBadge, PriorityBadge, SourceBadge, WorkModeBadge, NearshoreBadge } from "@/components/Badges";
 import { suggestionsForSignal } from "@/lib/suggestions";
 import { isApolloConnected } from "@/lib/apollo";
 import { ContactLookup } from "@/components/ContactLookup";
@@ -57,6 +57,7 @@ export default async function LeadDetailPage({
           <div className="mt-3 flex flex-wrap gap-2">
             <PriorityBadge priority={signal.priority} lang={lang} />
             <TechBadge technology={signal.technology} />
+            {signal.mentions_nearshore && <NearshoreBadge lang={lang} />}
           </div>
         </div>
         <div className="flex flex-col items-end gap-2">

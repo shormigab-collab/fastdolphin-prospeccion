@@ -80,6 +80,7 @@ export async function POST(request: Request) {
       sourceUrl: candidate.url,
       location: candidate.location,
       workMode: candidate.workMode,
+      mentionsNearshore: candidate.mentionsNearshore,
     });
 
     const draft = generateOutreachDraft(

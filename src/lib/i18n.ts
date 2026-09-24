@@ -206,6 +206,10 @@ export const dict = {
       tabMine: "Mis oportunidades",
       tabUnassigned: "Sin asignar",
       tabOverdue: "Seguimiento vencido",
+      tabNearshore: "Posible nearshore",
+      nearshoreBadge: "Nearshore",
+      nearshoreBadgeTitle:
+        "Menciona \"nearshore\", \"LatAm\" u otra palabra similar en el título, ubicación o descripción original — no es un dato confirmado, es una coincidencia de texto.",
       filterAssignedTo: "Responsable",
       allAssignedTo: "Todos los responsables",
       policyApplied: "Política aplicada",
@@ -666,6 +670,10 @@ export const dict = {
       tabMine: "My opportunities",
       tabUnassigned: "Unassigned",
       tabOverdue: "Overdue follow-up",
+      tabNearshore: "Possible nearshore",
+      nearshoreBadge: "Nearshore",
+      nearshoreBadgeTitle:
+        "Mentions \"nearshore\", \"LatAm\" or a similar word in the original title, location or description — not a confirmed fact, just a text match.",
       filterAssignedTo: "Responsible",
       allAssignedTo: "All responsible",
       policyApplied: "Policy applied",

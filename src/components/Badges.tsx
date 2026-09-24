@@ -137,3 +137,20 @@ export function WorkModeBadge({
     </span>
   );
 }
+
+// "Posible nearshore" — nunca "Nearshore" a secas, porque no es un dato que
+// Adzuna/RemoteOK/Remotive confirmen: es una coincidencia de palabras clave
+// en el título/ubicación/descripción original de la vacante (ver
+// @/lib/nearshore). El `title` deja esa aclaración a mano en la interfaz,
+// no solo en el código.
+export function NearshoreBadge({ lang = "es" }: { lang?: Lang }) {
+  const t = dict[lang];
+  return (
+    <span
+      title={t.leads.nearshoreBadgeTitle}
+      className="inline-flex shrink-0 items-center rounded-full bg-violet-50 px-2 py-0.5 text-[10px] font-semibold text-violet-700"
+    >
+      {t.leads.nearshoreBadge}
+    </span>
+  );
+}

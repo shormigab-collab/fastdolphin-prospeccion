@@ -28,6 +28,9 @@ export async function listSignals(filter?: {
   // Solo señales cuyo seguimiento programado (next_follow_up_at) ya venció
   // (es antes de hoy) — para la pestaña rápida "Seguimiento vencido".
   overdueOnly?: boolean;
+  // Solo señales marcadas como "posible nearshore" (ver mentions_nearshore
+  // en @/lib/types) — para la pestaña rápida del mismo nombre.
+  nearshoreOnly?: boolean;
 }) {
   const searchTerm = filter?.q?.trim() ? `%${filter.q.trim()}%` : null;
   const assignedToId =
@@ -57,6 +60,7 @@ export async function listSignals(filter?: {
       and (${assignedToId}::uuid is null or s.assigned_to = ${assignedToId}::uuid)
       and (${onlyUnassigned} = false or s.assigned_to is null)
       and (${filter?.overdueOnly ?? false} = false or s.next_follow_up_at < current_date)
+      and (${filter?.nearshoreOnly ?? false} = false or s.mentions_nearshore = true)
       and (
         ${searchTerm}::text is null
         or s.title ilike ${searchTerm}
@@ -255,16 +259,18 @@ export async function createJobFeedSignal(params: {
   sourceUrl: string;
   location?: string | null;
   workMode: WorkMode;
+  mentionsNearshore?: boolean;
 }) {
   const rows = (await sql`
     insert into signals (
       company_id, title, technology, signal_type, priority, source,
-      source_url, status, work_mode, location, vacancy_confirmed_at
+      source_url, status, work_mode, location, vacancy_confirmed_at,
+      mentions_nearshore
     )
     values (
       ${params.companyId}, ${params.title}, ${params.technology}, 'vacante_publicada',
       'alta', ${params.source}, ${params.sourceUrl}, 'nuevo', ${params.workMode},
-      ${params.location ?? null}, now()
+      ${params.location ?? null}, now(), ${params.mentionsNearshore ?? false}
     )
     returning id
   `) as unknown as { id: string }[];

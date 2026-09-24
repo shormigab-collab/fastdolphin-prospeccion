@@ -373,6 +373,48 @@ Otros detalles:
   siempre (iniciales, sin ningún logo inventado), solo con más variedad
   visual.
 
+## Filtro de Fuente con selección múltiple
+
+El filtro "Fuente" de Oportunidades ahora es un desplegable con checkboxes
+en vez de un `<select>` de una sola opción — se puede elegir, por ejemplo,
+Apollo + Adzuna a la vez, y trae señales que vengan de cualquiera de las
+marcadas. Internamente viaja en la URL como una lista separada por comas
+(`?source=apollo,adzuna`), ver `listSignals({ sources })` en
+`src/lib/queries.ts`.
+
+## "Posible nearshore" (⚠️ requiere migración antes de desplegar)
+
+Se investigó si Adzuna, RemoteOK o Remotive permiten filtrar vacantes por
+"buscan talento nearshore/LatAm" — **ninguna de las tres lo ofrece como
+dato**, no es algo que esas bolsas clasifiquen. Por eso, en vez de
+inventarlo, se agregó una detección honesta por palabras clave
+("nearshore", "LatAm", "Latin America", "América Latina", "South America",
+etc.) buscadas en el título, la ubicación y la descripción original de
+cada vacante al sincronizar (`src/lib/nearshore.ts`).
+
+Esto se guarda en la nueva columna `signals.mentions_nearshore` (migración
+`db/0012_nearshore.sql`) y en la interfaz **nunca se llama solo
+"Nearshore"** — siempre "Posible nearshore", con una etiqueta pequeña junto
+al nombre de la empresa (en Oportunidades y en el detalle de la señal) y
+una pestaña rápida del mismo nombre en Oportunidades. El texto de ayuda
+(al pasar el mouse sobre la etiqueta) deja claro que es una coincidencia de
+texto, no un dato confirmado — puede haber falsos positivos (una vacante
+que mencione "Latin America" por otro motivo) y falsos negativos (una
+empresa que busque nearshore sin usar esas palabras exactas).
+
+**Antes de desplegar este cambio, corre `db/0012_nearshore.sql` en el SQL
+Editor de Neon** — mismo motivo que las migraciones anteriores: tanto el
+filtro de `listSignals` como la creación de señales desde Adzuna/RemoteOK/
+Remotive (`createJobFeedSignal`) referencian la columna `mentions_nearshore`
+directamente en el SQL, así que fallan con "column does not exist" hasta
+que se corra.
+
+Sobre "contract" (tipo de contrato): Adzuna y Remotive sí devuelven ese
+dato (`contract_type`/`contract_time` en Adzuna, `job_type` en Remotive),
+RemoteOK no. No se agregó todavía un filtro para esto — si en algún momento
+lo quieren, se puede armar de forma honesta para esas dos fuentes (y dejar
+"no especificado" en RemoteOK), avisen y lo armamos.
+
 ## Cargar vacantes de cualquier fuente, no solo LinkedIn
 
 `/leads/new` (antes "Cargar de LinkedIn") ahora deja elegir de dónde salió

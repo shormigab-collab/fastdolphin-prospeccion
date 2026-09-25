@@ -22,7 +22,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Technology } from "@/lib/types";
-import { TITLE_KEYWORDS } from "@/lib/jobBoards";
+import { TITLE_KEYWORDS, classifyTechnology } from "@/lib/jobBoards";
 import { mentionsNearshore } from "@/lib/nearshore";
 
 const APP_ID = process.env.ADZUNA_APP_ID;
@@ -119,6 +119,88 @@ export async function fetchAdzunaJobs(
           mentionsNearshore: mentionsNearshore(title, location?.display_name, description),
         };
       });
+
+    return { candidates };
+  } catch (err) {
+    return {
+      candidates: [],
+      error: err instanceof Error ? err.message : "Error desconocido llamando a Adzuna.",
+    };
+  }
+}
+
+// Términos que se buscan literalmente en Adzuna (parámetro what_or, que es
+// un OR entre palabras) cuando se busca "posible nearshore" directamente, en
+// vez de partir de una tecnología. A diferencia de fetchAdzunaJobs (que
+// busca por tecnología y luego mira si el texto menciona nearshore), acá se
+// invierte el orden: se busca primero por nearshore/LatAm y cada resultado
+// se intenta clasificar en una tecnología después — los que no calzan en
+// ninguna de las 9 categorías del esquema se descartan (ver
+// classifyTechnology en @/lib/jobBoards).
+const NEARSHORE_SEARCH_TERMS = ["nearshore", "latam"];
+
+export async function fetchAdzunaNearshoreJobs(
+  country: AdzunaCountry,
+  page = 1,
+  resultsPerPage = 20
+): Promise<AdzunaSyncResult> {
+  if (!APP_ID || !APP_KEY) {
+    return { candidates: [], error: "No hay ADZUNA_APP_ID / ADZUNA_APP_KEY configuradas." };
+  }
+
+  try {
+    const url = new URL(`https://api.adzuna.com/v1/api/jobs/${country}/search/${page}`);
+    url.searchParams.set("app_id", APP_ID);
+    url.searchParams.set("app_key", APP_KEY);
+    url.searchParams.set("results_per_page", String(resultsPerPage));
+    url.searchParams.set("what_or", NEARSHORE_SEARCH_TERMS.join(" "));
+    url.searchParams.set("content-type", "application/json");
+
+    const res = await fetch(url.toString(), { cache: "no-store" });
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      const message =
+        (data && (data.exception || data.display)) || `Adzuna respondió ${res.status} ${res.statusText}`;
+      return { candidates: [], error: String(message) };
+    }
+
+    const results: Array<Record<string, unknown>> = (data?.results as Array<Record<string, unknown>>) ?? [];
+
+    const candidates: AdzunaSignalCandidate[] = results
+      .filter((r) => {
+        const company = r.company as { display_name?: string } | undefined;
+        return !!r.redirect_url && !!company?.display_name;
+      })
+      .map((r) => {
+        const company = r.company as { display_name?: string };
+        const location = r.location as { display_name?: string } | undefined;
+        const title = String(r.title ?? "Vacante sin título").replace(/<[^>]+>/g, "");
+        const description = r.description ? String(r.description) : null;
+        return {
+          companyName: company.display_name!,
+          title,
+          url: String(r.redirect_url),
+          location: location?.display_name ?? null,
+          description,
+          workMode: looksRemote(title, location?.display_name ?? null, description)
+            ? ("remoto" as const)
+            : ("presencial" as const),
+          technology: classifyTechnology(title, description),
+        };
+      })
+      // Se descarta lo que no calza en ninguna de las 9 tecnologías del
+      // esquema — nunca se fuerza una categoría que no corresponde.
+      .filter((r): r is typeof r & { technology: Technology } => r.technology !== null)
+      .map((r) => ({
+        companyName: r.companyName,
+        title: r.title,
+        url: r.url,
+        location: r.location,
+        workMode: r.workMode,
+        technology: r.technology,
+        mentionsNearshore: mentionsNearshore(r.title, r.location, r.description),
+      }));
 
     return { candidates };
   } catch (err) {

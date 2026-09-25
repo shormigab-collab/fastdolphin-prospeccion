@@ -13,6 +13,8 @@
 // su propia página) que no tienen un endpoint público equivalente — para
 // esas, sigue siendo necesario verificar a mano con "Confirmar vacante".
 
+import type { Technology } from "@/lib/types";
+
 export type JobBoardProvider = "greenhouse" | "lever";
 
 export interface JobBoardPosting {
@@ -44,6 +46,24 @@ export const TITLE_KEYWORDS: Record<string, string[]> = {
   Ciberseguridad: ["security", "seguridad", "cybersecurity", "infosec"],
   "PM/Consultoría": ["project manager", "consultant", "consultor", "program manager", "scrum master"],
 };
+
+// Clasifica el título (y opcionalmente la descripción) de una vacante en una
+// de las 9 tecnologías fijas del esquema (signals.technology es NOT NULL con
+// un CHECK — no existe "sin especificar"). Se usa para las búsquedas que NO
+// parten de una tecnología elegida a mano (por ejemplo, "Buscar posible
+// nearshore" en Adzuna/RemoteOK/Remotive): cada resultado se intenta ubicar
+// en una de estas categorías por su propio título, y si no calza en ninguna,
+// se descarta en vez de inventar una tecnología — nunca se fuerza un dato
+// que no está.
+export function classifyTechnology(title: string, description?: string | null): Technology | null {
+  const haystack = `${title} ${description ?? ""}`.toLowerCase();
+  for (const tech of Object.keys(TITLE_KEYWORDS) as Technology[]) {
+    if (TITLE_KEYWORDS[tech].some((k) => haystack.includes(k))) {
+      return tech;
+    }
+  }
+  return null;
+}
 
 export function detectProvider(url: string): JobBoardProvider | null {
   try {

@@ -428,6 +428,14 @@ export const dict = {
         "Adzuna no devolvió más vacantes nuevas para esta tecnología y país por ahora. Prueba con otro país o vuelve a intentar más adelante.",
       done: (created: number, skipped: number, total: number) =>
         `Listo: ${created} señal(es) nueva(s), ${skipped} ya existían (de ${total} vacantes encontradas).`,
+      modeTechnology: "Por tecnología",
+      modeNearshore: "Posible nearshore (todas)",
+      nearshoreHelp:
+        "En vez de buscar por tecnología, busca directamente \"nearshore\"/\"LatAm\" en Adzuna (en el país elegido) y clasifica cada resultado en una tecnología por su título. Las vacantes que no calzan claramente en ninguna de las 9 categorías se descartan, no se inventan.",
+      searchNearshoreNow: "Buscar nearshore",
+      searchingNearshore: "Buscando...",
+      noMoreNearshore:
+        "Adzuna no devolvió más vacantes nuevas de nearshore/LatAm para este país por ahora. Prueba con otro país o vuelve a intentar más adelante.",
     },
     remoteOkSync: {
       syncing: "Sincronizando...",
@@ -439,6 +447,13 @@ export const dict = {
         "RemoteOK no tiene vacantes nuevas para esta tecnología por ahora. Vuelve a intentar más adelante.",
       done: (created: number, skipped: number, total: number) =>
         `Listo: ${created} señal(es) nueva(s), ${skipped} ya existían (de ${total} vacantes encontradas).`,
+      modeTechnology: "Por tecnología",
+      modeNearshore: "Posible nearshore (todas)",
+      nearshoreHelp:
+        "En vez de filtrar el feed de RemoteOK por tecnología, lo filtra por palabras de nearshore/LatAm y clasifica cada resultado en una tecnología por su título. Las vacantes que no calzan claramente en ninguna de las 9 categorías se descartan, no se inventan.",
+      searchNearshoreNow: "Buscar nearshore",
+      searchingNearshore: "Buscando...",
+      noMoreNearshore: "RemoteOK no tiene vacantes nuevas de nearshore/LatAm por ahora. Vuelve a intentar más adelante.",
     },
     remotiveSync: {
       syncing: "Sincronizando...",
@@ -450,6 +465,13 @@ export const dict = {
         "Remotive no tiene vacantes nuevas para esta tecnología por ahora. Vuelve a intentar más adelante.",
       done: (created: number, skipped: number, total: number) =>
         `Listo: ${created} señal(es) nueva(s), ${skipped} ya existían (de ${total} vacantes encontradas).`,
+      modeTechnology: "Por tecnología",
+      modeNearshore: "Posible nearshore (todas)",
+      nearshoreHelp:
+        "En vez de buscar por tecnología, busca directamente \"nearshore\" en Remotive (un solo término, para no gastar de más la cuota diaria que sugiere Remotive) y clasifica cada resultado en una tecnología por su título. Las vacantes que no calzan claramente en ninguna de las 9 categorías se descartan, no se inventan. Puede dejar afuera vacantes que solo dicen \"LatAm\" sin decir \"nearshore\".",
+      searchNearshoreNow: "Buscar nearshore",
+      searchingNearshore: "Buscando...",
+      noMoreNearshore: "Remotive no tiene vacantes nuevas de nearshore por ahora. Vuelve a intentar más adelante.",
     },
     status: {
       nuevo: "Nuevo",
@@ -886,6 +908,14 @@ export const dict = {
         "Adzuna didn't return any more new postings for this technology and country right now. Try another country or try again later.",
       done: (created: number, skipped: number, total: number) =>
         `Done: ${created} new signal(s), ${skipped} already existed (out of ${total} postings found).`,
+      modeTechnology: "By technology",
+      modeNearshore: "Possible nearshore (all)",
+      nearshoreHelp:
+        "Instead of searching by technology, searches Adzuna directly for \"nearshore\"/\"LatAm\" (in the chosen country) and classifies each result into a technology from its title. Postings that don't clearly fit any of the 9 categories are discarded, not guessed.",
+      searchNearshoreNow: "Search nearshore",
+      searchingNearshore: "Searching...",
+      noMoreNearshore:
+        "Adzuna didn't return any more new nearshore/LatAm postings for this country right now. Try another country or try again later.",
     },
     remoteOkSync: {
       syncing: "Syncing...",
@@ -896,6 +926,13 @@ export const dict = {
       noMore: "RemoteOK has no new postings for this technology right now. Try again later.",
       done: (created: number, skipped: number, total: number) =>
         `Done: ${created} new signal(s), ${skipped} already existed (out of ${total} postings found).`,
+      modeTechnology: "By technology",
+      modeNearshore: "Possible nearshore (all)",
+      nearshoreHelp:
+        "Instead of filtering RemoteOK's feed by technology, filters it by nearshore/LatAm words and classifies each result into a technology from its title. Postings that don't clearly fit any of the 9 categories are discarded, not guessed.",
+      searchNearshoreNow: "Search nearshore",
+      searchingNearshore: "Searching...",
+      noMoreNearshore: "RemoteOK has no new nearshore/LatAm postings right now. Try again later.",
     },
     remotiveSync: {
       syncing: "Syncing...",
@@ -906,6 +943,13 @@ export const dict = {
       noMore: "Remotive has no new postings for this technology right now. Try again later.",
       done: (created: number, skipped: number, total: number) =>
         `Done: ${created} new signal(s), ${skipped} already existed (out of ${total} postings found).`,
+      modeTechnology: "By technology",
+      modeNearshore: "Possible nearshore (all)",
+      nearshoreHelp:
+        "Instead of searching by technology, searches Remotive directly for \"nearshore\" (a single term, to avoid using up Remotive's suggested daily quota) and classifies each result into a technology from its title. Postings that don't clearly fit any of the 9 categories are discarded, not guessed. May miss postings that only say \"LatAm\" without saying \"nearshore\".",
+      searchNearshoreNow: "Search nearshore",
+      searchingNearshore: "Searching...",
+      noMoreNearshore: "Remotive has no new nearshore postings right now. Try again later.",
     },
     status: {
       nuevo: "New",

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { fetchRemoteOkJobs } from "@/lib/remoteok";
+import { fetchRemoteOkJobs, fetchRemoteOkNearshoreJobs } from "@/lib/remoteok";
 import { ALL_TECHNOLOGIES } from "@/lib/apollo";
 import {
   findOrCreateCompany,
@@ -18,17 +18,20 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => ({}));
+  const mode = body?.mode === "nearshore" ? "nearshore" : "technology";
   const technology = body?.technology as Technology | undefined;
 
-  if (!technology || !ALL_TECHNOLOGIES.includes(technology)) {
+  if (mode === "technology" && (!technology || !ALL_TECHNOLOGIES.includes(technology))) {
     return NextResponse.json({ error: "Selecciona una tecnología válida." }, { status: 400 });
   }
 
   // RemoteOK no tiene búsqueda por página — cada sincronización descarga el
-  // feed completo vigente y lo filtra por tecnología, así que el duplicado
-  // (por URL de la vacante) es lo único que evita repetir señales entre una
+  // feed completo vigente y lo filtra (por tecnología, o por palabras de
+  // nearshore/LatAm en modo "nearshore"), así que el duplicado (por URL de
+  // la vacante) es lo único que evita repetir señales entre una
   // sincronización y la siguiente.
-  const { candidates, error } = await fetchRemoteOkJobs(technology);
+  const { candidates, error } =
+    mode === "nearshore" ? await fetchRemoteOkNearshoreJobs() : await fetchRemoteOkJobs(technology as Technology);
 
   if (error) {
     return NextResponse.json({ error }, { status: 502 });

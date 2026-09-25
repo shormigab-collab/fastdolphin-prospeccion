@@ -1,6 +1,12 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { fetchAdzunaJobs, isAdzunaConnected, ADZUNA_COUNTRIES, type AdzunaCountry } from "@/lib/adzuna";
+import {
+  fetchAdzunaJobs,
+  fetchAdzunaNearshoreJobs,
+  isAdzunaConnected,
+  ADZUNA_COUNTRIES,
+  type AdzunaCountry,
+} from "@/lib/adzuna";
 import { ALL_TECHNOLOGIES } from "@/lib/apollo";
 import {
   findOrCreateCompany,
@@ -26,10 +32,11 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => ({}));
+  const mode = body?.mode === "nearshore" ? "nearshore" : "technology";
   const technology = body?.technology as Technology | undefined;
   const country = body?.country as AdzunaCountry | undefined;
 
-  if (!technology || !ALL_TECHNOLOGIES.includes(technology)) {
+  if (mode === "technology" && (!technology || !ALL_TECHNOLOGIES.includes(technology))) {
     return NextResponse.json({ error: "Selecciona una tecnología válida." }, { status: 400 });
   }
 
@@ -37,16 +44,27 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Selecciona un país válido." }, { status: 400 });
   }
 
-  // Igual que con Apollo: cada sincronización avanza a la siguiente "página"
-  // de resultados de Adzuna para esta tecnología, para no traer siempre las
-  // mismas vacantes. La cuenta incluye señales de Adzuna de cualquier país
-  // para esta tecnología — una aproximación razonable, ya que lo importante
-  // es no quedarse pegado en los mismos resultados.
   const PAGE_SIZE = 20;
-  const existingCount = await countSignalsForTechnologyBySource(technology, "adzuna");
-  const page = Math.floor(existingCount / PAGE_SIZE) + 1;
 
-  const { candidates, error } = await fetchAdzunaJobs(technology, country, page, PAGE_SIZE);
+  let candidates: Awaited<ReturnType<typeof fetchAdzunaJobs>>["candidates"];
+  let error: string | undefined;
+
+  if (mode === "nearshore") {
+    // Búsqueda directa por "nearshore"/"latam", no por tecnología — no hay
+    // una tecnología elegida contra la cual contar resultados previos, así
+    // que siempre se pide la primera página; el filtro por URL ya existente
+    // más abajo evita repetir señales entre una búsqueda y la siguiente.
+    ({ candidates, error } = await fetchAdzunaNearshoreJobs(country, 1, PAGE_SIZE));
+  } else {
+    // Igual que con Apollo: cada sincronización avanza a la siguiente
+    // "página" de resultados de Adzuna para esta tecnología, para no traer
+    // siempre las mismas vacantes. La cuenta incluye señales de Adzuna de
+    // cualquier país para esta tecnología — una aproximación razonable, ya
+    // que lo importante es no quedarse pegado en los mismos resultados.
+    const existingCount = await countSignalsForTechnologyBySource(technology as Technology, "adzuna");
+    const page = Math.floor(existingCount / PAGE_SIZE) + 1;
+    ({ candidates, error } = await fetchAdzunaJobs(technology as Technology, country, page, PAGE_SIZE));
+  }
 
   if (error) {
     // Mensaje real de Adzuna (llaves inválidas, límite alcanzado, etc.) — se

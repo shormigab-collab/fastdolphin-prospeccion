@@ -17,7 +17,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Technology } from "@/lib/types";
-import { TITLE_KEYWORDS } from "@/lib/jobBoards";
+import { TITLE_KEYWORDS, classifyTechnology } from "@/lib/jobBoards";
 import { mentionsNearshore } from "@/lib/nearshore";
 
 export function isRemotiveConnected() {
@@ -85,6 +85,49 @@ export async function fetchRemotiveJobs(
         technology,
         mentionsNearshore: mentionsNearshore(j.title, j.candidate_required_location, j.description),
       }));
+
+    return { candidates };
+  } catch (err) {
+    return {
+      candidates: [],
+      error: err instanceof Error ? err.message : "Error desconocido llamando a Remotive.",
+    };
+  }
+}
+
+// Remotive solo acepta un término de búsqueda por llamada (igual que arriba),
+// así que "posible nearshore" usa "nearshore" como único término — se
+// prefiere gastar una sola llamada de la cuota diaria sugerida en vez de una
+// por cada sinónimo (nearshore/latam/etc). Puede dejar afuera vacantes que
+// solo dicen "LatAm" sin decir "nearshore"; para esas sigue sirviendo la
+// pestaña "Posible nearshore" de Leads, que también revisa lo que ya trajeron
+// las sincronizaciones por tecnología.
+export async function fetchRemotiveNearshoreJobs(limit = 30): Promise<RemotiveSyncResult> {
+  try {
+    const url = new URL("https://remotive.com/api/remote-jobs");
+    url.searchParams.set("search", "nearshore");
+    url.searchParams.set("limit", String(limit));
+
+    const res = await fetch(url.toString(), { cache: "no-store" });
+
+    if (!res.ok) {
+      return { candidates: [], error: `Remotive respondió ${res.status} ${res.statusText}` };
+    }
+
+    const data = (await res.json().catch(() => null)) as { jobs?: RemotiveJob[] } | null;
+    const jobs = data?.jobs ?? [];
+
+    const candidates: RemotiveSignalCandidate[] = jobs
+      .filter((j) => !!j.url && !!j.company_name && !!j.title)
+      .map((j) => ({
+        companyName: j.company_name!,
+        title: j.title!,
+        url: j.url!,
+        location: j.candidate_required_location || null,
+        technology: classifyTechnology(j.title!, `${j.candidate_required_location ?? ""} ${j.description ?? ""}`),
+      }))
+      .filter((c): c is typeof c & { technology: Technology } => c.technology !== null)
+      .map((c) => ({ ...c, mentionsNearshore: true }));
 
     return { candidates };
   } catch (err) {

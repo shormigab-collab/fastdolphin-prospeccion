@@ -19,7 +19,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Technology } from "@/lib/types";
-import { TITLE_KEYWORDS } from "@/lib/jobBoards";
+import { TITLE_KEYWORDS, classifyTechnology } from "@/lib/jobBoards";
 import { mentionsNearshore } from "@/lib/nearshore";
 
 export function isRemoteOkConnected() {
@@ -91,6 +91,52 @@ export async function fetchRemoteOkJobs(technology: Technology): Promise<RemoteO
         technology,
         mentionsNearshore: mentionsNearshore(j.position, j.location, (j.tags ?? []).join(" "), j.description),
       }));
+
+    return { candidates };
+  } catch (err) {
+    return {
+      candidates: [],
+      error: err instanceof Error ? err.message : "Error desconocido llamando a RemoteOK.",
+    };
+  }
+}
+
+// Como RemoteOK ya descarga el feed completo (no hay búsqueda del lado del
+// servidor), buscar "posible nearshore" es simplemente filtrar ese mismo
+// feed por las palabras de @/lib/nearshore en vez de por TITLE_KEYWORDS de
+// una tecnología elegida — y clasificar cada resultado en una tecnología
+// después (ver classifyTechnology), descartando lo que no calce en ninguna
+// de las 9 del esquema.
+export async function fetchRemoteOkNearshoreJobs(): Promise<RemoteOkSyncResult> {
+  try {
+    const res = await fetch("https://remoteok.com/api", {
+      cache: "no-store",
+      headers: { "User-Agent": "FastDolphinProspeccion/1.0 (+https://fastdolphin.com)" },
+    });
+
+    if (!res.ok) {
+      return { candidates: [], error: `RemoteOK respondió ${res.status} ${res.statusText}` };
+    }
+
+    const data = (await res.json().catch(() => null)) as RemoteOkJob[] | null;
+    if (!Array.isArray(data)) {
+      return { candidates: [], error: "RemoteOK devolvió una respuesta con un formato inesperado." };
+    }
+
+    const jobs = data.filter((j) => !j.legal && j.position && j.company);
+
+    const candidates: RemoteOkSignalCandidate[] = jobs
+      .filter((j) => mentionsNearshore(j.position, j.location, (j.tags ?? []).join(" "), j.description))
+      .filter((j) => !!(j.url || j.apply_url))
+      .map((j) => ({
+        companyName: j.company!,
+        title: j.position!,
+        url: String(j.apply_url || j.url),
+        location: j.location || null,
+        technology: classifyTechnology(j.position!, `${(j.tags ?? []).join(" ")} ${j.description ?? ""}`),
+      }))
+      .filter((c): c is typeof c & { technology: Technology } => c.technology !== null)
+      .map((c) => ({ ...c, mentionsNearshore: true }));
 
     return { candidates };
   } catch (err) {

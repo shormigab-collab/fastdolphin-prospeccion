@@ -1,0 +1,117 @@
+export type Technology =
+  | "SAP"
+  | "Oracle"
+  | "Salesforce"
+  | "Cloud/DevOps"
+  | "Datos/IA"
+  | "Desarrollo"
+  | "QA"
+  | "Ciberseguridad"
+  | "PM/Consultoría";
+
+export type SignalStatus =
+  | "nuevo"
+  | "calificando"
+  | "contactado"
+  | "en_conversacion"
+  | "reunion_agendada"
+  | "ganado"
+  | "descartado";
+
+export type SignalPriority = "alta" | "media" | "baja";
+
+export type SignalSource =
+  | "apollo"
+  | "manual"
+  | "linkedin_import"
+  | "adzuna"
+  | "remoteok"
+  | "remotive";
+
+export type WorkMode = "remoto" | "hibrido" | "presencial";
+
+export type SignalType =
+  | "vacante_publicada"
+  | "contratacion_reciente"
+  | "expansion"
+  | "tecnologia_detectada"
+  | "otro";
+
+export interface Company {
+  id: string;
+  name: string;
+  domain: string | null;
+  industry: string | null;
+  size_range: string | null;
+  linkedin_url: string | null;
+  careers_url: string | null;
+  notes: string | null;
+  created_at: string;
+}
+
+export interface Signal {
+  id: string;
+  company_id: string;
+  title: string;
+  technology: Technology;
+  signal_type: SignalType;
+  source: SignalSource;
+  source_url: string | null;
+  raw_text: string | null;
+  status: SignalStatus;
+  priority: SignalPriority;
+  work_mode: WorkMode;
+  location: string | null;
+  contact_name: string | null;
+  contact_title: string | null;
+  contact_email: string | null;
+  contact_phone: string | null;
+  contact_linkedin_url: string | null;
+  contact_apollo_id: string | null;
+  contact_email_status: string | null;
+  contact_looked_up_at: string | null;
+  vacancy_confirmed_at: string | null;
+  vacancy_confirmed_by: string | null;
+  origin_label: string | null;
+  assigned_to: string | null;
+  detected_at: string;
+  created_by: string | null;
+  created_at: string;
+  updated_at: string;
+  // El driver de la base de datos normalmente entrega esta columna `date`
+  // como string ("YYYY-MM-DD"), pero en algunos entornos puede llegar como
+  // Date — el código que la usa siempre pasa por toDateOnlyString()
+  // (@/lib/time) para no depender de cuál de las dos sea.
+  next_follow_up_at: string | Date | null;
+  next_follow_up_note: string | null;
+  // Coincidencia de palabras clave ("nearshore", "LatAm", etc.) en el
+  // título/ubicación/descripción de la vacante original — solo se calcula
+  // para señales de Adzuna/RemoteOK/Remotive (ver @/lib/nearshore). Nunca es
+  // un dato certero, siempre "posible nearshore" en la interfaz.
+  mentions_nearshore: boolean;
+  company?: Company;
+  // Solo viene lleno cuando la consulta hace el join con `users` (listSignals) —
+  // en otros lugares (getSignalById, etc.) queda undefined.
+  assigned_user?: { id: string; full_name: string | null; email: string } | null;
+}
+
+export interface MessageDraft {
+  id: string;
+  signal_id: string;
+  channel: "linkedin" | "email";
+  subject: string | null;
+  draft_text: string;
+  status: "pendiente_aprobacion" | "aprobado" | "enviado" | "descartado";
+  suggested_by: "system" | "user";
+  approved_by: string | null;
+  approved_at: string | null;
+  created_at: string;
+}
+
+export interface Note {
+  id: string;
+  signal_id: string;
+  author_id: string | null;
+  body: string;
+  created_at: string;
+}

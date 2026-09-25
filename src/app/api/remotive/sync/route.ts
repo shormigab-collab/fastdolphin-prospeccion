@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { auth } from "@/auth";
-import { fetchRemotiveJobs } from "@/lib/remotive";
+import { fetchRemotiveJobs, fetchRemotiveNearshoreJobs } from "@/lib/remotive";
 import { ALL_TECHNOLOGIES } from "@/lib/apollo";
 import {
   findOrCreateCompany,
@@ -18,17 +18,19 @@ export async function POST(request: Request) {
   }
 
   const body = await request.json().catch(() => ({}));
+  const mode = body?.mode === "nearshore" ? "nearshore" : "technology";
   const technology = body?.technology as Technology | undefined;
 
-  if (!technology || !ALL_TECHNOLOGIES.includes(technology)) {
+  if (mode === "technology" && (!technology || !ALL_TECHNOLOGIES.includes(technology))) {
     return NextResponse.json({ error: "Selecciona una tecnología válida." }, { status: 400 });
   }
 
   // Remotive sugiere no llamar la API más de unas pocas veces al día — esta
   // ruta no lo fuerza por software (ver nota en README), así que el uso
-  // esperado es el mismo botón "Sincronizar ahora" a mano que las demás
-  // fuentes, no un job automático corriendo en loop.
-  const { candidates, error } = await fetchRemotiveJobs(technology);
+  // esperado es el mismo botón "Sincronizar ahora"/"Buscar nearshore" a mano
+  // que las demás fuentes, no un job automático corriendo en loop.
+  const { candidates, error } =
+    mode === "nearshore" ? await fetchRemotiveNearshoreJobs() : await fetchRemotiveJobs(technology as Technology);
 
   if (error) {
     return NextResponse.json({ error }, { status: 502 });

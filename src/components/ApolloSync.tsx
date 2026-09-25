@@ -17,9 +17,12 @@ const TECHNOLOGIES: Technology[] = [
   "PM/Consultoría",
 ];
 
+type Mode = "profile" | "activeJobs";
+
 export function ApolloSync() {
   const router = useRouter();
   const { t } = useLanguage();
+  const [mode, setMode] = useState<Mode>("profile");
   const [technology, setTechnology] = useState<Technology>("SAP");
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<string | null>(null);
@@ -34,14 +37,14 @@ export function ApolloSync() {
       const res = await fetch("/api/apollo/sync", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ technology }),
+        body: JSON.stringify({ technology, mode }),
       });
       const body = await res.json().catch(() => ({}));
 
       if (!res.ok) {
         setError(body.error ?? t.apolloSync.genericError);
       } else if (body.total === 0) {
-        setResult(t.apolloSync.noMore);
+        setResult(mode === "activeJobs" ? t.apolloSync.noMoreActiveJobs : t.apolloSync.noMore);
         router.refresh();
       } else {
         setResult(t.apolloSync.done(body.created, body.skipped, body.total));
@@ -56,7 +59,28 @@ export function ApolloSync() {
 
   return (
     <div className="mt-3 rounded-xl bg-slate-50 p-3">
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-wrap items-center gap-1 rounded-lg bg-slate-200/60 p-1 text-xs font-medium">
+        <button
+          type="button"
+          onClick={() => setMode("profile")}
+          className={`rounded-md px-2.5 py-1 transition ${
+            mode === "profile" ? "bg-white text-ink shadow-sm" : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          {t.apolloSync.modeProfile}
+        </button>
+        <button
+          type="button"
+          onClick={() => setMode("activeJobs")}
+          className={`rounded-md px-2.5 py-1 transition ${
+            mode === "activeJobs" ? "bg-white text-ink shadow-sm" : "text-slate-500 hover:text-slate-700"
+          }`}
+        >
+          {t.apolloSync.modeActiveJobs}
+        </button>
+      </div>
+
+      <div className="mt-2 flex flex-wrap items-center gap-2">
         <select
           value={technology}
           onChange={(e) => setTechnology(e.target.value as Technology)}
@@ -76,7 +100,9 @@ export function ApolloSync() {
           {loading ? t.apolloSync.syncing : t.apolloSync.syncNow}
         </button>
       </div>
-      <p className="mt-2 text-xs text-slate-500">{t.apolloSync.help}</p>
+      <p className="mt-2 text-xs text-slate-500">
+        {mode === "activeJobs" ? t.apolloSync.activeJobsHelp : t.apolloSync.help}
+      </p>
       {result && <p className="mt-2 text-sm text-emerald-700">{result}</p>}
       {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
     </div>

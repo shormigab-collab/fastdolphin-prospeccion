@@ -26,6 +26,7 @@ export async function POST(request: Request) {
 
   const body = await request.json().catch(() => ({}));
   const technology = body?.technology as Technology | undefined;
+  const activeJobsOnly = body?.mode === "activeJobs";
 
   if (!technology || !ALL_TECHNOLOGIES.includes(technology)) {
     return NextResponse.json({ error: "Selecciona una tecnología válida." }, { status: 400 });
@@ -36,12 +37,14 @@ export async function POST(request: Request) {
   // primeras empresas) — la página se calcula a partir de cuántas señales
   // de Apollo ya existen para esta tecnología. Es una aproximación (algunas
   // empresas de una página se pueden saltar por duplicado), pero evita que
-  // el equipo se quede viendo siempre el mismo puñado de empresas.
+  // el equipo se quede viendo siempre el mismo puñado de empresas. Cuenta
+  // ambos modos juntos (perfil + vacante activa) para esta tecnología, ya
+  // que comparten la misma tabla de señales.
   const PAGE_SIZE = 20;
   const existingCount = await countApolloSignalsForTechnology(technology);
   const page = Math.floor(existingCount / PAGE_SIZE) + 1;
 
-  const { candidates, error } = await fetchApolloSignals(technology, PAGE_SIZE, page);
+  const { candidates, error } = await fetchApolloSignals(technology, PAGE_SIZE, page, activeJobsOnly);
 
   if (error) {
     // Mensaje real de Apollo.io (clave inválida, endpoint no incluido en el
@@ -59,7 +62,11 @@ export async function POST(request: Request) {
       linkedin_url: candidate.sourceUrl ?? null,
     });
 
-    const existingSignalId = await findApolloSignalForCompany(companyId, candidate.technology);
+    const existingSignalId = await findApolloSignalForCompany(
+      companyId,
+      candidate.technology,
+      candidate.basedOnActiveJobPosting ? "vacante_publicada" : "tecnologia_detectada"
+    );
     if (existingSignalId) {
       skipped++;
       continue;
@@ -71,12 +78,18 @@ export async function POST(request: Request) {
       technology: candidate.technology,
       sourceUrl: candidate.sourceUrl ?? null,
       workMode: "remoto",
-      rawText:
-        "Modalidad y ubicación de la vacante sin confirmar por Apollo.io — verificar con la empresa antes de contactar.",
+      rawText: candidate.basedOnActiveJobPosting
+        ? "Apollo.io indica que esta empresa tiene una vacante activa con un título relacionado a esta tecnología. A diferencia de Adzuna/RemoteOK/Remotive, este endpoint no entrega el link directo a la publicación individual — conviene confirmarla a mano (LinkedIn, careers page de la empresa, etc.) antes de contactar."
+        : "Modalidad y ubicación de la vacante sin confirmar por Apollo.io — verificar con la empresa antes de contactar.",
+      signalType: candidate.basedOnActiveJobPosting ? "vacante_publicada" : "tecnologia_detectada",
+      priority: candidate.basedOnActiveJobPosting ? "alta" : "media",
     });
 
     const draft = generateOutreachDraft(
-      { technology: candidate.technology, signal_type: "tecnologia_detectada" },
+      {
+        technology: candidate.technology,
+        signal_type: candidate.basedOnActiveJobPosting ? "vacante_publicada" : "tecnologia_detectada",
+      },
       candidate.companyName
     );
     await insertMessageDraft({ signalId, draftText: draft });

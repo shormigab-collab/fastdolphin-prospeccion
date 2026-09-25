@@ -16,6 +16,7 @@
 // ---------------------------------------------------------------------------
 
 import type { Technology } from "@/lib/types";
+import { TITLE_KEYWORDS } from "@/lib/jobBoards";
 
 export interface ApolloSignalCandidate {
   companyName: string;
@@ -24,6 +25,12 @@ export interface ApolloSignalCandidate {
   technology: Technology;
   title: string;
   sourceUrl?: string | null;
+  // true cuando el candidato vino del modo "vacante activa" (filtro
+  // q_organization_job_titles) en vez del modo de siempre (perfil de
+  // empresa) — ver fetchApolloSignals más abajo. Sirve para que la ruta
+  // que crea la señal decida el signal_type/prioridad correctos y no
+  // trate ambos modos igual.
+  basedOnActiveJobPosting?: boolean;
 }
 
 export interface ApolloSyncResult {
@@ -56,13 +63,29 @@ export const ALL_TECHNOLOGIES: Technology[] = Object.keys(TECH_KEYWORDS) as Tech
 export async function fetchApolloSignals(
   technology: Technology,
   perPage = 20,
-  page = 1
+  page = 1,
+  activeJobsOnly = false
 ): Promise<ApolloSyncResult> {
   if (!APOLLO_API_KEY) {
     return { candidates: [], error: "No hay APOLLO_API_KEY configurada." };
   }
 
-  const keywords = TECH_KEYWORDS[technology];
+  // Modo normal: coincidencia de PERFIL de empresa (industria/palabras
+  // clave), sin confirmar que estén contratando ahora mismo — el
+  // comportamiento de siempre.
+  //
+  // Modo "vacante activa" (activeJobsOnly): en vez de perfil, usa
+  // q_organization_job_titles — un parámetro real de la búsqueda de
+  // organizaciones de Apollo que filtra por los títulos que aparecen en
+  // vacantes ACTIVAS publicadas por la empresa ahora mismo (ver
+  // https://docs.apollo.io/reference/organization-search). Reutiliza
+  // TITLE_KEYWORDS (el mismo diccionario que ya usan Adzuna/RemoteOK/
+  // Remotive) en vez de TECH_KEYWORDS, porque acá lo que importa es cómo
+  // se llama el PUESTO en la vacante, no cómo describe Apollo el perfil
+  // de la empresa. Documentación de Apollo indica que este filtro está
+  // disponible desde el plan Basic — si el plan no lo soporta, Apollo
+  // responde con su propio error, que se muestra tal cual (ver más abajo).
+  const keywords = activeJobsOnly ? TITLE_KEYWORDS[technology] ?? [technology] : TECH_KEYWORDS[technology];
 
   try {
     const res = await fetch("https://api.apollo.io/api/v1/mixed_companies/search", {
@@ -71,11 +94,11 @@ export async function fetchApolloSignals(
         "Content-Type": "application/json",
         "X-Api-Key": APOLLO_API_KEY,
       },
-      body: JSON.stringify({
-        q_organization_keyword_tags: keywords,
-        page,
-        per_page: perPage,
-      }),
+      body: JSON.stringify(
+        activeJobsOnly
+          ? { q_organization_job_titles: keywords, page, per_page: perPage }
+          : { q_organization_keyword_tags: keywords, page, per_page: perPage }
+      ),
     });
 
     const data = await res.json().catch(() => null);
@@ -102,8 +125,11 @@ export async function fetchApolloSignals(
         companyDomain: (org.primary_domain as string) ?? (org.website_url as string) ?? null,
         industry: (org.industry as string) ?? null,
         technology,
-        title: `${name} coincide con el perfil de búsqueda de talento en ${technology} (Apollo.io)`,
+        title: activeJobsOnly
+          ? `${name} tiene una vacante activa en Apollo.io con un título relacionado a ${technology}`
+          : `${name} coincide con el perfil de búsqueda de talento en ${technology} (Apollo.io)`,
         sourceUrl: (org.linkedin_url as string) ?? (org.website_url as string) ?? null,
+        basedOnActiveJobPosting: activeJobsOnly,
       };
     });
 

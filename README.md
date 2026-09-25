@@ -166,9 +166,13 @@ mismo correo, la app la reconoce como la misma persona.
 
 ## Vacantes confirmadas y correos de prioridad alta (opcional)
 
-Como el plan de Apollo.io que usamos no confirma vacantes activas en tiempo
-real (solo perfiles de empresa que coinciden con una tecnología), se agregó
-un botón **"Confirmar vacante"** en el detalle de cada señal: alguien del
+El modo por defecto de Apollo.io solo compara el *perfil* de una empresa
+con una tecnología, sin confirmar una vacante activa en tiempo real (ver
+más abajo "Apollo: buscar por vacante activa" para el modo que sí lo hace,
+si el plan lo soporta). Por eso, para ese modo por defecto — y para
+cualquier señal que no venga con link directo a la publicación (Apollo,
+carga manual) — se agregó un botón **"Confirmar vacante"** en el detalle
+de cada señal: alguien del
 equipo lo usa cuando verificó a mano (en LinkedIn, la página de la empresa,
 etc.) que la vacante existe de verdad. Al confirmarla, la señal sube a
 prioridad alta, queda registrado en las notas (sale en "Actividad
@@ -224,6 +228,52 @@ Lever. Para las que usan otro sistema (Workday, SmartRecruiters, su propia
 página, etc.) no hay un endpoint público equivalente que podamos consultar
 automáticamente — para esas, sigue siendo necesario el botón "Confirmar
 vacante" a mano.
+
+## Apollo: buscar por vacante activa, no solo por perfil (según tu plan)
+
+El modo de Apollo que ya existía desde el inicio (llamado ahora "Por perfil
+de empresa" en Configuración) solo compara el *perfil* de una empresa
+(industria, palabras clave) con una tecnología — nunca confirmó una vacante
+real. Investigando qué desbloqueaba el upgrade de plan de Sebas, se
+encontró que el mismo endpoint de búsqueda de Apollo que ya usa la
+plataforma (`mixed_companies/search`, `src/lib/apollo.ts`) acepta un
+parámetro real, `q_organization_job_titles`, que filtra por los títulos que
+aparecen en **vacantes activas** publicadas por cada empresa ahora mismo —
+según la documentación de Apollo, disponible desde el plan Basic (el que
+Sebas confirmó que activó).
+
+Por eso se agregó un segundo modo, **"Vacante activa (Apollo)"**, como
+pestaña junto al de siempre en cada tarjeta de Apollo en Configuración. En
+vez de las palabras de perfil (`TECH_KEYWORDS`), usa el mismo diccionario
+de títulos de vacante que ya usan Adzuna/RemoteOK/Remotive
+(`TITLE_KEYWORDS` en `src/lib/jobBoards.ts`) — así los cuatro orígenes
+buscan "vacante real" con el mismo criterio.
+
+Diferencia honesta con Adzuna/RemoteOK/Remotive: este endpoint de Apollo
+confirma que la empresa tiene una vacante activa con ese título, pero **no
+entrega el link directo a la publicación individual** (solo datos de la
+empresa) — por eso, aunque la señal entra con prioridad alta y tipo
+"vacante publicada" (más confianza que el modo de perfil), el texto de la
+señal deja explícito que conviene confirmarla a mano antes de contactar, y
+sigue disponible el botón "Confirmar vacante" de la sección anterior.
+
+**Sobre el plan**: no hay forma de confirmar desde acá, sin la API key real,
+si tu plan específico incluye este filtro — la documentación de Apollo dice
+que sí desde Basic, pero no lo garantiza para siempre ni por cuenta. Si al
+usar el botón "Sincronizar ahora" en modo "Vacante activa" el plan no lo
+soporta, **Apollo va a devolver su propio mensaje de error**, que se
+muestra tal cual en Configuración (mismo criterio que el resto de la
+plataforma: nunca se adivina, se muestra lo que la fuente real responde).
+
+No se agregó (quedó fuera de alcance por ahora, se puede armar si hace
+falta): un filtro de "solo vacantes de los últimos N días"
+(`organization_job_posted_at_range`, existe en la API de Apollo pero no se
+conectó todavía) y los endpoints separados de **Intent Data** (temas de
+intención de compra, hasta 12 en el plan Organization) y **Job Postings por
+empresa** (`organizations/{id}/job_postings`, requiere ya tener el
+`organization_id` de una empresa puntual — sirve más para revisar una
+empresa específica que para descubrir nuevas, así que no encaja igual de
+bien con el flujo de sincronización masiva que ya existe).
 
 ## Detección automática de vacantes reales por tecnología (Adzuna)
 
@@ -414,6 +464,56 @@ dato (`contract_type`/`contract_time` en Adzuna, `job_type` en Remotive),
 RemoteOK no. No se agregó todavía un filtro para esto — si en algún momento
 lo quieren, se puede armar de forma honesta para esas dos fuentes (y dejar
 "no especificado" en RemoteOK), avisen y lo armamos.
+
+## Buscar directamente "nearshore" / "LatAm" (no solo detectarlo)
+
+Lo de arriba (`mentions_nearshore`) es pasivo: solo se fija si el texto
+menciona nearshore/LatAm dentro de los resultados que ya trajo la búsqueda
+por tecnología (SAP, Oracle, Salesforce, etc.). Esta sección es la parte
+activa: un modo nuevo en Adzuna, RemoteOK y Remotive (pestaña "Posible
+nearshore (todas)" junto al botón de sincronizar, en Configuración) que
+busca directamente por esas palabras **en vez de** por una tecnología
+elegida a mano — así no depende de que la vacante también mencione "SAP" o
+"Oracle" en el título para aparecer.
+
+Como confirmó Sebas: el negocio ataca principalmente por tecnología (eso
+sigue siendo el flujo principal, sin cambios) y nearshore/LatAm talent es
+sobre todo lo que Fast Dolphin ofrece, no necesariamente algo que la
+mayoría de las vacantes anuncian en su propio texto. Por eso este modo se
+agregó como una pestaña **adicional y opcional** dentro de cada fuente, no
+como reemplazo del flujo por tecnología — sirve para pescar el grupo más
+chico de empresas que sí lo dicen explícitamente (buscan contratistas
+LatAm/nearshore), que son leads especialmente calientes porque ya están
+pre-dispuestas a lo que Fast Dolphin ofrece.
+
+Cómo funciona cada fuente en este modo:
+
+- **Adzuna**: busca `nearshore`/`latam` con el parámetro `what_or` (búsqueda
+  real del lado del servidor), en el país elegido.
+- **RemoteOK**: ya descarga el feed completo en cada sincronización — en
+  este modo lo filtra por esas mismas palabras en vez de por tecnología.
+- **Remotive**: solo acepta un término de búsqueda por llamada, así que usa
+  únicamente `"nearshore"` (no también `"latam"`) para no gastar de más la
+  cuota diaria que ellos sugieren. Esto puede dejar afuera vacantes que solo
+  dicen "LatAm" sin decir "nearshore" — limitación conocida, no un error.
+
+El problema de fondo: `signals.technology` es una columna obligatoria (no
+admite vacío) con solo 9 valores posibles. Una vacante encontrada por
+"nearshore" no trae una tecnología de antemano — así que cada resultado se
+clasifica después, por su propio título, usando el mismo mapa de palabras
+clave que ya usan las búsquedas por tecnología (`classifyTechnology` en
+`src/lib/jobBoards.ts`). **Si el título no calza claramente en ninguna de
+las 9 categorías, esa vacante se descarta silenciosamente** — nunca se
+inventa ni se deja "sin especificar", siguiendo el mismo criterio del resto
+de la plataforma de no fingir un dato que no existe. En la práctica esto
+significa que este modo no captura el 100% de lo que encuentra la búsqueda
+nearshore/LatAm; solo lo que además se puede ubicar honestamente en una de
+las 9 tecnologías.
+
+No hace falta ninguna migración nueva para esto — usa las mismas tablas y
+la misma columna `mentions_nearshore` de la sección anterior (que en estas
+señales casi siempre queda en `true`, porque el texto que las trajo es
+justamente esa palabra).
 
 ## Cargar vacantes de cualquier fuente, no solo LinkedIn
 

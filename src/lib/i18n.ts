@@ -417,6 +417,12 @@ export const dict = {
         "Apollo no devolvió más empresas nuevas para esta tecnología por ahora — ya se recorrió lo que su plan expone. Vuelve a intentar más adelante.",
       done: (created: number, skipped: number, total: number) =>
         `Listo: ${created} señal(es) nueva(s), ${skipped} ya existían (de ${total} empresas encontradas).`,
+      modeProfile: "Por perfil de empresa",
+      modeActiveJobs: "Vacante activa (Apollo)",
+      activeJobsHelp:
+        "En vez de comparar el perfil de la empresa, busca directamente empresas con una vacante ACTIVA cuyo título coincide con esta tecnología (filtro real de Apollo, no una corazonada). Requiere un plan de Apollo que incluya ese filtro (desde Basic, según Apollo) — si el tuyo no lo incluye, Apollo lo va a decir con su propio mensaje de error. A diferencia de Adzuna/RemoteOK/Remotive, este modo no entrega el link directo a la publicación individual, así que conviene confirmar la vacante a mano antes de contactar.",
+      noMoreActiveJobs:
+        "Apollo no devolvió más empresas nuevas con vacante activa para esta tecnología por ahora. Vuelve a intentar más adelante.",
     },
     adzunaSync: {
       syncing: "Sincronizando...",
@@ -897,6 +903,12 @@ export const dict = {
         "Apollo didn't return any more new companies for this technology right now — we've gone through what your plan exposes. Try again later.",
       done: (created: number, skipped: number, total: number) =>
         `Done: ${created} new signal(s), ${skipped} already existed (out of ${total} companies found).`,
+      modeProfile: "By company profile",
+      modeActiveJobs: "Active job posting (Apollo)",
+      activeJobsHelp:
+        "Instead of matching the company's profile, searches directly for companies with an ACTIVE job posting whose title matches this technology (a real Apollo filter, not a guess). Requires an Apollo plan that includes that filter (from Basic, per Apollo) — if yours doesn't, Apollo will say so with its own error message. Unlike Adzuna/RemoteOK/Remotive, this mode doesn't give a direct link to the individual posting, so it's worth confirming the vacancy by hand before reaching out.",
+      noMoreActiveJobs:
+        "Apollo didn't return any more new companies with an active job posting for this technology right now. Try again later.",
     },
     adzunaSync: {
       syncing: "Syncing...",

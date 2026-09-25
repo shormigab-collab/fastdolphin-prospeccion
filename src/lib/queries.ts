@@ -182,10 +182,19 @@ export async function countApolloSignalsForTechnology(technology: Technology) {
 
 // Evita crear la misma señal de Apollo.io dos veces si el equipo sincroniza
 // varias veces (una empresa + tecnología ya detectada antes no se repite).
-export async function findApolloSignalForCompany(companyId: string, technology: Technology) {
+// signalType se incluye en la condición (no solo empresa+tecnología) para
+// que el modo "vacante activa" no se salte una empresa solo porque ya
+// existía una señal de Apollo del modo de perfil (de siempre) — son
+// niveles de confianza distintos, así que vale la pena que ambas entren.
+export async function findApolloSignalForCompany(
+  companyId: string,
+  technology: Technology,
+  signalType: SignalType = "tecnologia_detectada"
+) {
   const rows = (await sql`
     select id from signals
-    where company_id = ${companyId} and technology = ${technology} and source = 'apollo'
+    where company_id = ${companyId} and technology = ${technology}
+      and source = 'apollo' and signal_type = ${signalType}
     limit 1
   `) as unknown as { id: string }[];
 
@@ -200,6 +209,14 @@ export async function createApolloSignal(params: {
   rawText?: string | null;
   workMode?: WorkMode;
   location?: string | null;
+  // Por defecto sigue siendo "tecnologia_detectada"/"media" (perfil de
+  // empresa, sin confirmar). El modo "vacante activa" de Apollo
+  // (q_organization_job_titles) pasa 'vacante_publicada'/'alta' en vez,
+  // porque ahí Apollo sí confirma un título de vacante activo en la
+  // empresa — más parecido a lo que ya hacen Adzuna/RemoteOK/Remotive,
+  // aunque sin link directo a la publicación individual.
+  signalType?: SignalType;
+  priority?: SignalPriority;
 }) {
   const rows = (await sql`
     insert into signals (
@@ -207,8 +224,9 @@ export async function createApolloSignal(params: {
       source_url, raw_text, status, work_mode, location
     )
     values (
-      ${params.companyId}, ${params.title}, ${params.technology}, 'tecnologia_detectada',
-      'media', 'apollo', ${params.sourceUrl ?? null}, ${params.rawText ?? null}, 'nuevo',
+      ${params.companyId}, ${params.title}, ${params.technology},
+      ${params.signalType ?? "tecnologia_detectada"}, ${params.priority ?? "media"},
+      'apollo', ${params.sourceUrl ?? null}, ${params.rawText ?? null}, 'nuevo',
       ${params.workMode ?? "remoto"}, ${params.location ?? null}
     )
     returning id

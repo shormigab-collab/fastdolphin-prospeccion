@@ -15,6 +15,7 @@ import {
   confirmVacancy,
   updateCompanyCareersUrl,
   updateSignalContact,
+  bulkScheduleFollowUp,
 } from "@/lib/queries";
 import { notifyTeamOfHighPrioritySignal } from "@/lib/email";
 import type { SignalStatus } from "@/lib/types";
@@ -94,6 +95,28 @@ export async function addNoteAction(signalId: string, body: string) {
   const session = await auth();
   await addNoteQuery({ signalId, authorId: session?.user?.id ?? null, body });
   revalidatePath(`/leads/${signalId}`);
+}
+
+// "Marcar seguimiento como hecho" — a propósito NO se infiere de lo que
+// alguien escribe en una nota (adivinar frases como "ya llamé" es poco
+// confiable: falsos positivos/negativos), así que esta es la única forma de
+// limpiar next_follow_up_at: una acción explícita. Borra la fecha/nota
+// programada (vuelve a "Up to date" en Próxima acción) y, si se escribió
+// algo, lo deja registrado en Notas en el mismo paso — así queda constancia
+// de qué pasó sin que el sistema tenga que interpretar texto libre.
+export async function markFollowUpDoneAction(signalId: string, note?: string) {
+  const session = await auth();
+  await bulkScheduleFollowUp([signalId], null, null);
+  if (note && note.trim()) {
+    await addNoteQuery({
+      signalId,
+      authorId: session?.user?.id ?? null,
+      body: `Seguimiento hecho: ${note.trim()}`,
+    });
+  }
+  revalidatePath(`/leads/${signalId}`);
+  revalidatePath("/leads");
+  revalidatePath("/activity");
 }
 
 // Lógica compartida de "confirmar vacante": sube la señal a prioridad alta,

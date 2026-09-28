@@ -8,11 +8,13 @@ import { ContactLookup } from "@/components/ContactLookup";
 import { IconLink } from "@/components/icons";
 import { getDict } from "@/lib/i18n";
 import { getLang } from "@/lib/getLang";
+import { toDateOnlyString } from "@/lib/time";
 import { StatusForm } from "./StatusForm";
 import { MessagePanel } from "./MessagePanel";
 import { NotesForm } from "./NotesForm";
 import { ConfirmVacancyButton } from "./ConfirmVacancyButton";
 import { JobBoardCheck } from "./JobBoardCheck";
+import { FollowUpCard } from "./FollowUpCard";
 
 export default async function LeadDetailPage({
   params,
@@ -36,6 +38,10 @@ export default async function LeadDetailPage({
     month: "short",
     year: "numeric",
   });
+  // Normalizado por si el driver de Neon entrega next_follow_up_at como
+  // objeto Date en vez de string (ver toDateOnlyString) — solo se muestra
+  // la tarjeta de seguimiento cuando de verdad hay una fecha programada.
+  const followUpDate = toDateOnlyString(signal.next_follow_up_at);
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 sm:px-8 sm:py-10">
@@ -65,6 +71,12 @@ export default async function LeadDetailPage({
           <ConfirmVacancyButton signalId={signal.id} confirmedAt={signal.vacancy_confirmed_at} />
         </div>
       </div>
+
+      {followUpDate && (
+        <div className="mt-6">
+          <FollowUpCard signalId={signal.id} date={followUpDate} note={signal.next_follow_up_note} />
+        </div>
+      )}
 
       <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-5">
         <div className="space-y-6 lg:col-span-3">

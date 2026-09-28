@@ -17,6 +17,13 @@ interface InitialContact {
   lookedUpAt: string | null;
 }
 
+interface ContactCandidate {
+  apolloId: string;
+  name: string;
+  title: string | null;
+  linkedinUrl: string | null;
+}
+
 function initialsOf(name: string) {
   return name
     .split(/\s+/)
@@ -40,6 +47,8 @@ export function ContactLookup({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [notFound, setNotFound] = useState(false);
+  const [candidates, setCandidates] = useState<ContactCandidate[] | null>(null);
+  const [revealingId, setRevealingId] = useState<string | null>(null);
 
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -67,12 +76,49 @@ export function ContactLookup({
     setLoading(true);
     setError(null);
     setNotFound(false);
+    setCandidates(null);
 
     try {
       const res = await fetch("/api/apollo/contact", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ signalId }),
+        body: JSON.stringify({ signalId, action: "search" }),
+      });
+      const body = await res.json().catch(() => ({}));
+
+      if (!res.ok) {
+        setError(body.error ?? t.contact.genericError);
+      } else if (!body.candidates || body.candidates.length === 0) {
+        setNotFound(true);
+      } else {
+        setCandidates(body.candidates);
+      }
+    } catch {
+      setError(t.contact.connectionError);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // Segundo paso: alguien del equipo ya eligió a la persona correcta de la
+  // lista — recién acá se gasta 1 crédito de Apollo revelando su correo, y
+  // se guarda como el contacto de la señal.
+  async function handleReveal(candidate: ContactCandidate) {
+    setRevealingId(candidate.apolloId);
+    setError(null);
+
+    try {
+      const res = await fetch("/api/apollo/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          signalId,
+          action: "reveal",
+          apolloId: candidate.apolloId,
+          name: candidate.name,
+          title: candidate.title,
+          linkedinUrl: candidate.linkedinUrl,
+        }),
       });
       const body = await res.json().catch(() => ({}));
 
@@ -80,14 +126,16 @@ export function ContactLookup({
         setError(body.error ?? t.contact.genericError);
       } else if (!body.found) {
         setNotFound(true);
+        setCandidates(null);
       } else {
         if (body.warning) setError(body.warning);
+        setCandidates(null);
         router.refresh();
       }
     } catch {
       setError(t.contact.connectionError);
     } finally {
-      setLoading(false);
+      setRevealingId(null);
     }
   }
 
@@ -100,6 +148,7 @@ export function ContactLookup({
       linkedinUrl: initialContact.linkedinUrl ?? "",
     });
     setError(null);
+    setCandidates(null);
     setEditing(true);
   }
 
@@ -154,6 +203,52 @@ export function ContactLookup({
           )}
         </div>
       </div>
+
+      {!editing && candidates && (
+        <div className="mt-4 rounded-xl border border-slate-200 bg-slate-50 p-3">
+          <div className="flex items-center justify-between gap-2">
+            <p className="text-xs font-semibold text-slate-500">{t.contact.candidatesTitle}</p>
+            <button
+              onClick={() => setCandidates(null)}
+              className="text-xs text-slate-400 hover:text-slate-600"
+            >
+              {t.contact.closeCandidates}
+            </button>
+          </div>
+          <ul className="mt-2 space-y-2">
+            {candidates.map((c) => (
+              <li
+                key={c.apolloId}
+                className="flex items-center justify-between gap-3 rounded-lg bg-white px-3 py-2 shadow-sm"
+              >
+                <div className="min-w-0">
+                  <p className="truncate text-sm font-medium text-ink">{c.name}</p>
+                  <p className="truncate text-xs text-slate-500">
+                    {c.title ?? t.contact.unspecifiedRole}
+                  </p>
+                  {c.linkedinUrl && (
+                    <a
+                      href={c.linkedinUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-xs text-dolphin-600 hover:underline"
+                    >
+                      {t.contact.viewLinkedin}
+                    </a>
+                  )}
+                </div>
+                <button
+                  onClick={() => handleReveal(c)}
+                  disabled={revealingId !== null}
+                  className="shrink-0 rounded-xl bg-dolphin-600 px-2.5 py-1.5 text-xs font-semibold text-white hover:bg-dolphin-700 disabled:opacity-60"
+                >
+                  {revealingId === c.apolloId ? t.contact.revealing : t.contact.useThisContact}
+                </button>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {editing ? (
         <div className="mt-4 space-y-3">

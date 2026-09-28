@@ -143,17 +143,19 @@ export async function fetchApolloSignals(
 }
 
 // ---------------------------------------------------------------------------
-// Búsqueda de contacto (RRHH / Talent Acquisition) por empresa, bajo demanda
-// desde el detalle de una señal — botón "Buscar contacto".
+// Búsqueda de contacto (RRHH / Talent Acquisition / Recruiting) por empresa,
+// bajo demanda desde el detalle de una señal — botón "Buscar contactos".
 //
-// Dos llamadas a Apollo:
-//   1. People Search: busca personas de esa empresa con cargos de RRHH /
-//      contratación (sin gastar crédito, solo trae nombre/cargo/LinkedIn).
-//   2. People Match (enrichment): revela el correo de esa persona (esto sí
-//      consume 1 crédito del plan). El teléfono casi nunca viene en la
-//      respuesta síncrona — Apollo lo entrega vía un webhook asíncrono en
-//      planes que lo soportan — así que si no viene, lo mostramos como "no
-//      disponible" en vez de tratarlo como error.
+// Dos llamadas a Apollo, separadas a propósito para no gastar crédito de más:
+//   1. People Search (findCompanyContactCandidates): busca hasta varias
+//      personas de esa empresa con cargos de RRHH/contratación (sin gastar
+//      crédito, solo trae nombre/cargo/LinkedIn) — el equipo elige de esa
+//      lista a la persona correcta.
+//   2. People Match / enrichment (revealContact): revela el correo de la
+//      persona YA elegida (esto sí consume 1 crédito del plan). El teléfono
+//      casi nunca viene en la respuesta síncrona — Apollo lo entrega vía un
+//      webhook asíncrono en planes que lo soportan — así que si no viene, se
+//      muestra como "no disponible" en vez de tratarlo como error.
 //
 // Documentación: https://docs.apollo.io/reference/people-api-search
 //                https://docs.apollo.io/reference/people-enrichment
@@ -215,12 +217,25 @@ async function resolveCompanyDomain(companyName: string): Promise<string | null>
   }
 }
 
-export async function findCompanyContact(params: {
+export interface ApolloContactCandidate {
+  apolloId: string;
+  name: string;
+  title: string | null;
+  linkedinUrl: string | null;
+}
+
+export interface ApolloContactCandidatesResult {
+  candidates: ApolloContactCandidate[];
+  error?: string;
+}
+
+export async function findCompanyContactCandidates(params: {
   companyName: string;
   companyDomain?: string | null;
-}): Promise<ApolloContactResult> {
+  limit?: number;
+}): Promise<ApolloContactCandidatesResult> {
   if (!APOLLO_API_KEY) {
-    return { error: "No hay APOLLO_API_KEY configurada." };
+    return { candidates: [], error: "No hay APOLLO_API_KEY configurada." };
   }
 
   try {
@@ -228,6 +243,7 @@ export async function findCompanyContact(params: {
 
     if (!domain) {
       return {
+        candidates: [],
         error:
           "No se pudo determinar el dominio de la empresa en Apollo.io (ni el guardado ni buscando por nombre), y este endpoint solo filtra por dominio.",
       };
@@ -243,7 +259,7 @@ export async function findCompanyContact(params: {
         q_organization_domains_list: [domain],
         person_titles: CONTACT_TITLES,
         page: 1,
-        per_page: 1,
+        per_page: params.limit ?? 5,
       }),
     });
 
@@ -253,17 +269,51 @@ export async function findCompanyContact(params: {
       const message =
         (searchData && (searchData.error || searchData.message)) ||
         `Apollo respondió ${searchRes.status} ${searchRes.statusText}`;
-      return { error: String(message) };
+      return { candidates: [], error: String(message) };
     }
 
     const people: Array<Record<string, unknown>> =
       (searchData?.people as Array<Record<string, unknown>>) ?? [];
-    const person = people[0];
 
-    if (!person) {
-      return { contact: null };
-    }
+    const candidates: ApolloContactCandidate[] = people
+      .filter((p) => !!p.id)
+      .map((p) => ({
+        apolloId: p.id as string,
+        name: (p.name as string) ?? "Contacto sin nombre",
+        title: (p.title as string) ?? null,
+        linkedinUrl: (p.linkedin_url as string) ?? null,
+      }));
 
+    return { candidates };
+  } catch (err) {
+    return {
+      candidates: [],
+      error: err instanceof Error ? err.message : "Error desconocido llamando a Apollo.io",
+    };
+  }
+}
+
+export async function revealContact(params: {
+  apolloId: string;
+  fallbackName?: string | null;
+  fallbackTitle?: string | null;
+  fallbackLinkedinUrl?: string | null;
+}): Promise<ApolloContactResult> {
+  if (!APOLLO_API_KEY) {
+    return { error: "No hay APOLLO_API_KEY configurada." };
+  }
+
+  const baseContact: ApolloContact = {
+    apolloId: params.apolloId,
+    name: params.fallbackName ?? "Contacto sin nombre",
+    title: params.fallbackTitle ?? null,
+    email: null,
+    emailStatus: null,
+    phone: null,
+    linkedinUrl: params.fallbackLinkedinUrl ?? null,
+  };
+
+  try {
     const matchRes = await fetch("https://api.apollo.io/api/v1/people/match", {
       method: "POST",
       headers: {
@@ -271,29 +321,20 @@ export async function findCompanyContact(params: {
         "X-Api-Key": APOLLO_API_KEY,
       },
       body: JSON.stringify({
-        id: person.id,
+        id: params.apolloId,
         reveal_personal_emails: false,
       }),
     });
 
     const matchData = await matchRes.json().catch(() => null);
 
-    const baseContact: ApolloContact = {
-      apolloId: (person.id as string) ?? null,
-      name: (person.name as string) ?? "Contacto sin nombre",
-      title: (person.title as string) ?? null,
-      email: null,
-      emailStatus: null,
-      phone: null,
-      linkedinUrl: (person.linkedin_url as string) ?? null,
-    };
-
     if (!matchRes.ok) {
       const message =
         (matchData && (matchData.error || matchData.message)) ||
         `Apollo respondió ${matchRes.status} ${matchRes.statusText}`;
-      // Encontramos a la persona pero no se pudo revelar el correo — se
-      // devuelve lo que sí se encontró, junto con el error real de Apollo.
+      // Encontramos a la persona (ya elegida en el paso 1) pero no se pudo
+      // revelar el correo — se devuelve lo que sí se sabía de antes, junto
+      // con el error real de Apollo.
       return { contact: baseContact, error: `No se pudo revelar el correo: ${message}` };
     }
 

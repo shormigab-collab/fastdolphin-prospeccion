@@ -275,6 +275,29 @@ empresa** (`organizations/{id}/job_postings`, requiere ya tener el
 empresa específica que para descubrir nuevas, así que no encaja igual de
 bien con el flujo de sincronización masiva que ya existe).
 
+## Buscar contactos de RRHH/Talent Acquisition (elegir entre varios)
+
+El botón "Buscar contactos" en el detalle de cada señal ya buscaba
+específicamente personas con cargos de reclutamiento en la empresa — la
+lista de cargos que usa (`CONTACT_TITLES` en `src/lib/apollo.ts`) es:
+`talent acquisition`, `recruiter`, `recruiting`, `human resources`,
+`hr manager`, `hr business partner`, `people operations`. Eso no cambió.
+
+Lo que sí cambió: antes traía solo a la primera persona que encontraba con
+esos cargos y revelaba su correo de una — ahora es en dos pasos:
+
+1. **Buscar contactos**: trae hasta 5 personas de esa empresa con esos
+   cargos (nombre, cargo, LinkedIn) — este paso **no gasta crédito** del
+   plan de Apollo, es una simple búsqueda.
+2. El equipo elige a la persona correcta de esa lista con el botón
+   "Elegir" — **recién ahí** se gasta 1 crédito revelando su correo (y
+   teléfono, si el plan lo entrega), y se guarda como el contacto de la
+   señal.
+
+Se separó en dos pasos justamente para no gastar créditos revelando el
+correo de gente que después no era la persona correcta — antes, con una
+sola persona traída, no había margen para elegir.
+
 ## Detección automática de vacantes reales por tecnología (Adzuna)
 
 Además de Apollo (que compara el *perfil* de una empresa con una tecnología,
@@ -422,6 +445,35 @@ Otros detalles:
   por empresa en vez de siempre el mismo celeste — mismo mecanismo de
   siempre (iniciales, sin ningún logo inventado), solo con más variedad
   visual.
+
+## Marcar un seguimiento como hecho
+
+Faltaba una pieza en lo de arriba: una vez programado un seguimiento, no
+había forma de cerrarlo — la única manera de que dejara de salir "vencido"
+era ponerle una fecha nueva. Sebas preguntó si se podía actualizar solo al
+agregar una nota diciendo que ya se hizo el seguimiento; se decidió que no
+convenía hacerlo así: interpretar texto libre de las notas para adivinar si
+un seguimiento ya se hizo es poco confiable — "llamé, no contestó" no es lo
+mismo que "listo, ya seguí" — y "Próxima acción" existe justamente para ser
+un dato real, no una interpretación.
+
+En vez de eso, se agregó un botón explícito **"Marcar seguimiento como
+hecho"**, en el detalle de cada señal (`/leads/[id]`), que aparece solo
+cuando esa señal tiene un seguimiento programado de verdad. Al usarlo:
+
+1. Borra `next_follow_up_at`/`next_follow_up_note` de la señal — "Próxima
+   acción" en Oportunidades pasa a mostrar la siguiente sugerencia real
+   (asignar/buscar contacto/revisar) o "Al día", según corresponda.
+2. Deja escribir una nota opcional ("¿Qué pasó?") que, si se llena, queda
+   guardada en Notas de esa señal en el mismo paso — así queda registrado
+   qué pasó sin que el sistema tenga que interpretar nada.
+
+No hizo falta ninguna migración — reutiliza las mismas columnas de
+`db/0011_follow_up.sql` y la misma función de agregar notas que ya
+existían (`src/app/(app)/leads/[id]/actions.ts`,
+`markFollowUpDoneAction`). Por ahora solo está en el detalle de la señal,
+no en la barra de acciones en lote de Oportunidades — si se necesita
+también ahí (para marcar varias a la vez), se puede agregar después.
 
 ## Filtro de Fuente con selección múltiple
 
